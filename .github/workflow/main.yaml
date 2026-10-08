@@ -1,20 +1,19 @@
 name: CI/CD Pipeline
 
-on: 
+on:
   push:
-	branches: "main"
+	  branches: "main"
 
 jobs:
   deploy:
-	runs-on: self-hosted
+	  runs-on: self-hosted
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Pull and restart container
-        run: |
-          cd /path/to/your/project
-          git pull origin main
-          docker compose down
-          docker compose up -d --build
+      - name: Docker build
+	run: docker build -t "nginx404" .
+      
+      - name: Docker run
+	run: docker run -d -p 5000:5000 nginx404
