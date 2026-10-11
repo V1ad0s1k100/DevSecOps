@@ -8,7 +8,7 @@ WORKDIR /var/www/html
 
 RUN rm index.nginx-debian.html
 
-COPY index.html . 
+COPY *.html . 
 
 WORKDIR /etc/nginx/sites-available
 

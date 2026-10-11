@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizMaster — Cosmic Terminal [200 OK]</title>
+
+    <!-- Tailwind + FontAwesome + Confetti -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        space: { 900: '#030712', 800: '#0B0F19', 700: '#111827', 600: '#1f2937' },
+                        neon: {
+                            cyan: '#00f3ff',
+                            purple: '#b026ff',
+                            pink: '#ff007f',
+                            blue: '#3b82f6',
+                            green: '#22ff88',
+                            amber: '#fbbf24'
+                        }
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* ==================== BASE ==================== */
+        html, body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        /* ==================== CANVAS STARFIELD ==================== */
+        #bg-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* ==================== GLASSMORPHISM ==================== */
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.55);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        }
+
+        .glass-panel-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-panel-hover:hover {
+            background: rgba(31, 41, 55, 0.7);
+            border-color: rgba(0, 243, 255, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px 0 rgba(0, 243, 255, 0.15);
+        }
+
+        /* ==================== NEON TEXT ==================== */
+        .neon-text-cyan {
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.7), 0 0 20px rgba(0, 243, 255, 0.4), 0 0 40px rgba(0, 243, 255, 0.2);
+        }
+        .neon-text-purple {
+            text-shadow: 0 0 10px rgba(176, 38, 255, 0.7), 0 0 20px rgba(176, 38, 255, 0.4);
+        }
+        .neon-text-green {
+            text-shadow: 0 0 10px rgba(34, 255, 136, 0.7), 0 0 20px rgba(34, 255, 136, 0.4), 0 0 40px rgba(34, 255, 136, 0.2);
+        }
+
+        /* ==================== GRADIENT TEXT ==================== */
+        .gradient-text {
+            background: linear-gradient(135deg, #00f3ff 0%, #b026ff 50%, #ff007f 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* ==================== GLITCH TITLE ==================== */
+        .glitch-title {
+            position: relative;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            color: #ffffff;
+        }
+
+        /* 404 style (red/pink) */
+        .glitch-404 {
+            text-shadow: 0 0 20px rgba(255, 0, 127, 0.8), 0 0 40px rgba(176, 38, 255, 0.6);
+        }
+        .glitch-404::before,
+        .glitch-404::after {
+            content: "404";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            clip: rect(0, 0, 0, 0);
+        }
+        .glitch-404::before {
+            left: -2px;
+            text-shadow: 2px 0 #ff007f;
+            animation: glitch-anim-1 2.5s infinite linear alternate-reverse;
+        }
+        .glitch-404::after {
+            left: 2px;
+            text-shadow: -2px 0 #00f3ff;
+            animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+
+        /* 200 style (green/cyan) */
+        .glitch-200 {
+            text-shadow: 0 0 20px rgba(34, 255, 136, 0.8), 0 0 40px rgba(0, 243, 255, 0.6);
+        }
+        .glitch-200::before,
+        .glitch-200::after {
+            content: "200";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            clip: rect(0, 0, 0, 0);
+        }
+        .glitch-200::before {
+            left: -2px;
+            text-shadow: 2px 0 #22ff88;
+            animation: glitch-anim-1 2.8s infinite linear alternate-reverse;
+        }
+        .glitch-200::after {
+            left: 2px;
+            text-shadow: -2px 0 #00f3ff;
+            animation: glitch-anim-2 3.4s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim-1 {
+            0%   { clip: rect(20px, 9999px, 15px, 0); }
+            20%  { clip: rect(50px, 9999px, 85px, 0); }
+            40%  { clip: rect(10px, 9999px, 40px, 0); }
+            60%  { clip: rect(75px, 9999px, 10px, 0); }
+            80%  { clip: rect(30px, 9999px, 60px, 0); }
+            100% { clip: rect(90px, 9999px, 25px, 0); }
+        }
+        @keyframes glitch-anim-2 {
+            0%   { clip: rect(10px, 9999px, 60px, 0); }
+            25%  { clip: rect(80px, 9999px, 10px, 0); }
+            50%  { clip: rect(30px, 9999px, 70px, 0); }
+            75%  { clip: rect(65px, 9999px, 20px, 0); }
+            100% { clip: rect(40px, 9999px, 90px, 0); }
+        }
+
+        /* ==================== FLOATING / PULSE ==================== */
+        @keyframes floatSpace {
+            0%, 100% { transform: translateY(0) rotate(0) scale(1); }
+            50%      { transform: translateY(-18px) rotate(3deg) scale(1.02); }
+        }
+        .floating-astronaut { animation: floatSpace 6s ease-in-out infinite; }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50%      { opacity: 0.8; transform: scale(1.08); }
+        }
+        .pulse-glow { animation: pulseGlow 4s infinite ease-in-out; }
+
+        /* ==================== SCROLLBAR ==================== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #030712; }
+        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #374151; }
+
+        /* ==================== SCROLLBAR NONE ==================== */
+        .scrollbar-none::-webkit-scrollbar { display: none; }
+        .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ==================== OPTION BUTTONS ==================== */
+        .option-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* ==================== PRINT ==================== */
+        @media print {
+            body * { visibility: hidden; }
+            #printable-certificate, #printable-certificate * { visibility: visible; }
+            #printable-certificate {
+                position: absolute;
+                left: 0; top: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col relative overflow-x-hidden antialiased selection:bg-neon-cyan selection:text-black">
+
+    <!-- ==================== BACKGROUND CANVAS ==================== -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- ==================== AMBIENT GLOW ORBS ==================== -->
+    <div class="fixed top-0 left-1/4 w-96 h-96 bg-neon-cyan/10 rounded-full blur-3xl pointer-events-none pulse-glow z-0"></div>
+    <div class="fixed bottom-10 right-1/4 w-96 h-96 bg-neon-purple/10 rounded-full blur-3xl pointer-events-none pulse-glow z-0"></div>
+
+    <!-- ==================== HEADER ==================== -->
+    <header class="relative z-30 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex items-center justify-between">
+        <!-- Brand -->
+        <a href="#" onclick="navigateTo('home'); return false;" class="flex items-center gap-3 group">
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-neon-cyan to-neon-purple p-[1px] flex items-center justify-center shadow-lg shadow-neon-cyan/20 group-hover:scale-105 transition-transform">
+                <div class="w-full h-full bg-space-900 rounded-[11px] flex items-center justify-center">
+                    <i class="fa-solid fa-brain text-neon-cyan"></i>
+                </div>
+            </div>
+            <div>
+                <span class="font-orbitron font-bold text-lg tracking-wider text-white group-hover:text-neon-cyan transition-colors">QUIZ<span class="text-neon-cyan">MASTER</span></span>
+                <span class="text-[10px] block font-mono text-gray-500 tracking-widest">v2.0 // COSMIC</span>
+            </div>
+        </a>
+
+        <!-- Nav links (visible on desktop) -->
+        <nav class="hidden md:flex items-center gap-1 glass-panel p-1.5 rounded-2xl">
+            <button onclick="navigateTo('home')" id="nav-home" class="nav-btn px-4 py-2 rounded-xl font-medium text-sm transition-all flex items-center gap-2 text-gray-400 hover:text-white hover:bg-white/5">
+                <i class="fa-solid fa-house"></i> Главная
+            </button>
+            <button onclick="navigateTo('catalog')" id="nav-catalog" class="nav-btn px-4 py-2 rounded-xl font-medium text-sm transition-all flex items-center gap-2 text-gray-400 hover:text-white hover:bg-white/5">
+                <i class="fa-solid fa-compass"></i> Каталог
+            </button>
+            <button onclick="navigateTo('create')" id="nav-create" class="nav-btn px-4 py-2 rounded-xl font-medium text-sm transition-all flex items-center gap-2 text-gray-400 hover:text-white hover:bg-white/5">
+                <i class="fa-solid fa-plus-circle"></i> Конструктор
+            </button>
+            <button onclick="navigateTo('stats')" id="nav-stats" class="nav-btn px-4 py-2 rounded-xl font-medium text-sm transition-all flex items-center gap-2 text-gray-400 hover:text-white hover:bg-white/5">
+                <i class="fa-solid fa-chart-pie"></i> Статистика
+            </button>
+        </nav>
+
+        <!-- Controls -->
+        <div class="flex items-center gap-2 sm:gap-3">
+            <!-- Mini Stats -->
+            <div class="hidden lg:flex items-center gap-2 px-3.5 py-2 rounded-xl glass-panel text-xs font-semibold text-gray-300">
+                <i class="fa-solid fa-trophy text-neon-amber"></i>
+                <span>Пройдено: <strong id="header-completed-count" class="text-white font-mono">0</strong></span>
+            </div>
+
+            <!-- Sound -->
+            <button id="sound-toggle-btn" onclick="toggleSound()" class="glass-panel p-2.5 rounded-xl text-gray-300 hover:text-neon-cyan hover:border-neon-cyan/50 transition-all" title="Звук">
+                <i id="sound-icon" class="fa-solid fa-volume-xmark"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ==================== TOAST ==================== -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- ==================== MAIN ==================== -->
+    <main class="flex-grow w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
+
+        <!-- ============ VIEW: 200 OK HOME ============ -->
+        <div id="view-home" class="view-section max-w-6xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                <!-- Left column -->
+                <div class="lg:col-span-7 text-center lg:text-left space-y-6">
+                    <!-- Status badge -->
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-panel text-xs sm:text-sm text-neon-green font-mono border-neon-green/30">
+                        <span class="w-2 h-2 rounded-full bg-neon-green animate-ping"></span>
+                        <span>СИГНАЛ УСТАНОВЛЕН // STATUS_CODE: 200</span>
+                    </div>
+
+                    <!-- Big glitch 200 -->
+                    <div class="relative">
+                        <h1 class="glitch-title glitch-200 text-7xl sm:text-8xl md:text-9xl tracking-tight my-1">200</h1>
+                    </div>
+
+                    <!-- Headline -->
+                    <div class="space-y-2">
+                        <h2 class="text-2xl sm:text-3xl font-bold font-orbitron text-white tracking-wide">
+                            Соединение с орбитой установлено
+                        </h2>
+                        <p class="text-gray-400 text-sm sm:text-base max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
+                            Добро пожаловать на борт <span class="text-neon-cyan">QuizMaster</span>. Все системы работают в штатном режиме.
+                            Проверьте свои знания, создайте собственные тесты и проследите свой прогресс в реальном времени.
+                        </p>
+                    </div>
+
+                    <!-- Primary CTA -->
+                    <div class="flex flex-wrap gap-3 justify-center lg:justify-start pt-2">
+                        <button onclick="navigateTo('catalog')" class="relative group overflow-hidden rounded-2xl p-[1px] font-semibold focus:outline-none">
+                            <span class="absolute inset-0 bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-pink rounded-2xl"></span>
+                            <span class="relative block px-6 py-3.5 bg-space-900 rounded-[15px] text-white flex items-center gap-2 group-hover:bg-opacity-70 transition-all">
+                                <i class="fa-solid fa-rocket text-neon-cyan"></i>
+                                <span>Начать тестирование</span>
+                                <i class="fa-solid fa-arrow-right text-xs text-neon-cyan group-hover:translate-x-1 transition-transform"></i>
+                            </span>
+                        </button>
+                        <button onclick="navigateTo('create')" class="glass-panel glass-panel-hover px-6 py-3.5 rounded-2xl text-sm font-semibold text-gray-200 flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles text-neon-purple"></i>
+                            Создать свой тест
+                        </button>
+                    </div>
+
+                    <!-- Feature mini-grid -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6">
+                        <div class="glass-panel p-4 rounded-2xl text-center">
+                            <i class="fa-solid fa-layer-group text-neon-cyan text-lg mb-1"></i>
+                            <div class="text-xs text-gray-400">Категорий</div>
+                            <div class="font-orbitron text-white font-bold">4+</div>
+                        </div>
+                        <div class="glass-panel p-4 rounded-2xl text-center">
+                            <i class="fa-solid fa-circle-question text-neon-purple text-lg mb-1"></i>
+                            <div class="text-xs text-gray-400">Тестов</div>
+                            <div class="font-orbitron text-white font-bold" id="home-quiz-count">0</div>
+                        </div>
+                        <div class="glass-panel p-4 rounded-2xl text-center">
+                            <i class="fa-solid fa-award text-neon-amber text-lg mb-1"></i>
+                            <div class="text-xs text-gray-400">Сертификат</div>
+                            <div class="font-orbitron text-white font-bold">PDF</div>
+                        </div>
+                        <div class="glass-panel p-4 rounded-2xl text-center">
+                            <i class="fa-solid fa-shield-halved text-neon-green text-lg mb-1"></i>
+                            <div class="text-xs text-gray-400">DevSecOps</div>
+                            <div class="font-orbitron text-white font-bold">Ready</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right column: astronaut illustration -->
+                <div class="lg:col-span-5 flex justify-center items-center relative">
+                    <div class="absolute w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-gradient-to-tr from-neon-cyan/20 via-neon-purple/20 to-transparent blur-3xl pulse-glow pointer-events-none"></div>
+
+                    <div class="relative floating-astronaut max-w-[280px] sm:max-w-[340px]">
+                        <svg viewBox="0 0 500 500" class="w-full h-auto drop-shadow-[0_20px_30px_rgba(0,243,255,0.25)]">
+                            <!-- Tether -->
+                            <path d="M 250 450 C 150 480, 50 400, 20 300" fill="none" stroke="rgba(0, 243, 255, 0.4)" stroke-width="3" stroke-dasharray="6,6">
+                                <animate attributeName="d" dur="8s" repeatCount="indefinite" values="
+                                    M 250 450 C 150 480, 50 400, 20 300;
+                                    M 250 450 C 180 500, 30 380, 20 300;
+                                    M 250 450 C 150 480, 50 400, 20 300" />
+                            </path>
+                            <!-- Backpack -->
+                            <rect x="170" y="180" width="160" height="190" rx="25" fill="#1e293b" stroke="#22ff88" stroke-width="4" />
+                            <rect x="185" y="200" width="30" height="70" rx="8" fill="#0f172a" stroke="#00f3ff" stroke-width="2" />
+                            <circle cx="200" cy="290" r="8" fill="#00f3ff" />
+                            <circle cx="200" cy="315" r="8" fill="#22ff88" />
+                            <!-- Body -->
+                            <path d="M 200 220 L 300 220 L 320 360 L 180 360 Z" fill="#e2e8f0" />
+                            <!-- Chest -->
+                            <rect x="215" y="235" width="70" height="60" rx="10" fill="#0f172a" stroke="#22ff88" stroke-width="3" />
+                            <line x1="230" y1="255" x2="270" y2="255" stroke="#00f3ff" stroke-width="3" stroke-linecap="round" />
+                            <line x1="230" y1="270" x2="255" y2="270" stroke="#22ff88" stroke-width="3" stroke-linecap="round" />
+                            <!-- Left arm -->
+                            <path d="M 200 230 C 150 250, 130 200, 140 170" fill="none" stroke="#cbd5e1" stroke-width="32" stroke-linecap="round" />
+                            <circle cx="140" cy="170" r="18" fill="#0f172a" stroke="#22ff88" stroke-width="3" />
+                            <!-- Right arm waving -->
+                            <path d="M 300 230 C 350 220, 370 170, 355 140" fill="none" stroke="#cbd5e1" stroke-width="32" stroke-linecap="round">
+                                <animate attributeName="d" dur="4s" repeatCount="indefinite" values="
+                                    M 300 230 C 350 220, 370 170, 355 140;
+                                    M 300 230 C 350 210, 365 150, 360 125;
+                                    M 300 230 C 350 220, 370 170, 355 140" />
+                            </path>
+                            <circle cx="355" cy="140" r="18" fill="#0f172a" stroke="#22ff88" stroke-width="3" />
+                            <!-- Legs -->
+                            <path d="M 215 350 L 195 430" fill="none" stroke="#cbd5e1" stroke-width="36" stroke-linecap="round" />
+                            <path d="M 285 350 L 310 425" fill="none" stroke="#cbd5e1" stroke-width="36" stroke-linecap="round" />
+                            <rect x="165" y="420" width="45" height="25" rx="10" fill="#0f172a" stroke="#00f3ff" stroke-width="2" />
+                            <rect x="295" y="415" width="45" height="25" rx="10" fill="#0f172a" stroke="#22ff88" stroke-width="2" />
+                            <!-- Helmet -->
+                            <circle cx="250" cy="165" r="75" fill="#f8fafc" stroke="#22ff88" stroke-width="4" />
+                            <ellipse cx="255" cy="165" rx="58" ry="48" fill="#030712" />
+                            <path d="M 210 145 C 240 125, 280 125, 295 145 C 270 155, 230 155, 210 145 Z" fill="url(#visor-grad-200)" opacity="0.85" />
+                            <circle cx="230" cy="170" r="2" fill="#ffffff" />
+                            <circle cx="275" cy="180" r="1.5" fill="#00f3ff" />
+                            <circle cx="250" cy="185" r="2" fill="#22ff88" />
+                            <defs>
+                                <linearGradient id="visor-grad-200" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#00f3ff" />
+                                    <stop offset="50%" stop-color="#22ff88" />
+                                    <stop offset="100%" stop-color="#b026ff" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+
+                        <!-- Floating badge -->
+                        <div class="absolute -bottom-4 right-0 glass-panel px-3 py-1.5 rounded-xl text-[11px] font-mono text-neon-green flex items-center gap-1.5 shadow-lg border-neon-green/40">
+                            <span class="animate-ping w-1.5 h-1.5 rounded-full bg-neon-green"></span>
+                            <span>ALL SYSTEMS: OK</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ VIEW: CATALOG ============ -->
+        <div id="view-catalog" class="view-section hidden max-w-7xl mx-auto space-y-6">
+            <!-- Hero -->
+            <div class="relative overflow-hidden rounded-3xl glass-panel p-8 md:p-10 border-white/10">
+                <div class="absolute -right-10 -bottom-10 w-80 h-80 bg-neon-cyan/10 rounded-full blur-2xl"></div>
+                <div class="relative z-10 max-w-2xl space-y-4">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 font-mono">
+                        <i class="fa-solid fa-satellite-dish"></i> КАТАЛОГ ТЕСТОВ
+                    </span>
+                    <h1 class="text-3xl md:text-5xl font-extrabold tracking-tight leading-tight font-orbitron">
+                        Выберите <span class="gradient-text">сектор знаний</span>
+                    </h1>
+                    <p class="text-gray-400 text-base md:text-lg leading-relaxed">
+                        Интерактивные тесты по программированию, науке, истории и логике. Каждая миссия — шанс прокачать свой ранг.
+                    </p>
+                    <div class="pt-3">
+                        <div class="relative">
+                            <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"></i>
+                            <input type="text" id="search-quiz-input" oninput="filterQuizzes()" placeholder="Поиск по названию или описанию..." class="w-full pl-11 pr-4 py-3.5 glass-panel rounded-2xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-neon-cyan/70 focus:ring-1 focus:ring-neon-cyan/40 transition-all">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Category pills -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none" id="category-pills">
+                <button onclick="selectCategory('all')" class="cat-pill px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap bg-neon-cyan text-space-900 border border-neon-cyan" data-cat="all">
+                    <i class="fa-solid fa-border-all mr-1.5"></i> Все
+                </button>
+                <button onclick="selectCategory('IT')" class="cat-pill px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap glass-panel text-gray-400 hover:text-white" data-cat="IT">
+                    <i class="fa-solid fa-code mr-1.5 text-neon-cyan"></i> IT & Веб
+                </button>
+                <button onclick="selectCategory('Наука')" class="cat-pill px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap glass-panel text-gray-400 hover:text-white" data-cat="Наука">
+                    <i class="fa-solid fa-atom mr-1.5 text-neon-green"></i> Наука и Космос
+                </button>
+                <button onclick="selectCategory('История')" class="cat-pill px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap glass-panel text-gray-400 hover:text-white" data-cat="История">
+                    <i class="fa-solid fa-landmark mr-1.5 text-neon-amber"></i> История
+                </button>
+                <button onclick="selectCategory('Логика')" class="cat-pill px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap glass-panel text-gray-400 hover:text-white" data-cat="Логика">
+                    <i class="fa-solid fa-lightbulb mr-1.5 text-neon-pink"></i> Логика
+                </button>
+                <button onclick="selectCategory('Мои тесты')" class="cat-pill px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap glass-panel text-gray-400 hover:text-white" data-cat="Мои тесты">
+                    <i class="fa-solid fa-user-pen mr-1.5 text-neon-purple"></i> Мои тесты
+                </button>
+            </div>
+
+            <!-- Grid -->
+            <div id="quiz-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+        </div>
+
+        <!-- ============ VIEW: QUIZ RUNNER ============ -->
+        <div id="view-quiz" class="view-section hidden max-w-4xl mx-auto space-y-5">
+            <!-- Top bar -->
+            <div class="glass-panel p-4 rounded-2xl flex items-center justify-between">
+                <button onclick="confirmExitQuiz()" class="text-gray-400 hover:text-neon-cyan transition-colors flex items-center gap-2 text-sm font-semibold">
+                    <i class="fa-solid fa-arrow-left"></i> Выйти
+                </button>
+                <div id="quiz-timer-container" class="flex items-center gap-2 px-4 py-2 rounded-xl bg-space-800/90 border border-neon-amber/40 font-mono text-base font-bold text-neon-amber">
+                    <i class="fa-solid fa-clock animate-pulse"></i>
+                    <span id="quiz-timer-text">10:00</span>
+                </div>
+                <button id="flag-question-btn" onclick="toggleFlagCurrentQuestion()" class="px-3.5 py-2 rounded-xl border border-white/10 text-gray-400 hover:text-neon-amber hover:border-neon-amber/50 transition-all text-xs font-semibold flex items-center gap-2">
+                    <i class="fa-regular fa-bookmark" id="flag-icon"></i>
+                    <span class="hidden sm:inline">Запомнить</span>
+                </button>
+            </div>
+
+            <!-- Progress -->
+            <div class="space-y-2">
+                <div class="flex justify-between items-center text-xs font-semibold text-gray-400">
+                    <span>Вопрос <span id="current-q-index" class="text-white font-mono">1</span> / <span id="total-q-count" class="text-white font-mono">10</span></span>
+                    <span id="quiz-title-badge" class="truncate max-w-[200px] text-neon-cyan font-mono">Название</span>
+                </div>
+                <div class="w-full bg-space-800 rounded-full h-2.5 p-0.5 border border-white/5">
+                    <div id="quiz-progress-bar" class="bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-pink h-1.5 rounded-full transition-all duration-300 w-0"></div>
+                </div>
+            </div>
+
+            <!-- Question card -->
+            <div class="glass-panel p-6 sm:p-8 rounded-3xl space-y-6 relative overflow-hidden">
+                <div id="question-type-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 font-mono">
+                    <i class="fa-solid fa-circle-dot"></i> Один вариант
+                </div>
+                <h2 id="question-text" class="text-xl sm:text-2xl font-bold leading-snug text-white"></h2>
+                <div id="options-container" class="space-y-3 pt-2"></div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="space-y-4">
+                <div class="flex items-center justify-between gap-3">
+                    <button id="btn-prev-q" onclick="prevQuestion()" class="px-5 py-3 rounded-xl glass-panel text-gray-300 font-semibold hover:text-white hover:border-neon-cyan/40 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-chevron-left"></i> Назад
+                    </button>
+                    <button id="btn-next-q" onclick="nextQuestion()" class="relative group overflow-hidden rounded-xl p-[1px] font-bold">
+                        <span class="absolute inset-0 bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-pink rounded-xl"></span>
+                        <span class="relative px-6 py-3 bg-space-900 rounded-[11px] text-white flex items-center gap-2 group-hover:bg-opacity-70 transition-all">
+                            <span>Далее</span> <i class="fa-solid fa-chevron-right"></i>
+                        </span>
+                    </button>
+                </div>
+
+                <!-- Question navigator -->
+                <div class="glass-panel p-4 rounded-2xl">
+                    <div class="text-xs font-semibold text-gray-400 mb-3 flex items-center justify-between">
+                        <span>Карта вопросов:</span>
+                        <div class="flex gap-3 text-[11px] font-mono">
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-neon-cyan"></span> Отвечено</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-neon-amber"></span> Метка</span>
+                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-space-600 border border-white/10"></span> Пусто</span>
+                        </div>
+                    </div>
+                    <div id="question-navigator-grid" class="flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ VIEW: RESULTS ============ -->
+        <div id="view-results" class="view-section hidden max-w-4xl mx-auto space-y-8">
+            <div class="glass-panel p-8 sm:p-12 rounded-3xl text-center space-y-6 relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-60 h-60 bg-neon-cyan/10 rounded-full blur-3xl"></div>
+                <div id="result-badge-container" class="inline-block px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-neon-cyan/10 text-neon-cyan border border-neon-cyan/30 font-mono"></div>
+                <h2 id="result-title" class="text-3xl sm:text-4xl font-extrabold tracking-tight font-orbitron">Тест завершён</h2>
+
+                <div class="flex justify-center my-6">
+                    <div class="relative w-44 h-44 flex items-center justify-center">
+                        <svg class="w-full h-full transform -rotate-90">
+                            <circle cx="88" cy="88" r="76" stroke="currentColor" stroke-width="12" class="text-space-700" fill="transparent" />
+                            <circle id="score-circle-progress" cx="88" cy="88" r="76" stroke="url(#score-grad)" stroke-width="12" stroke-dasharray="477.5" stroke-dashoffset="477.5" stroke-linecap="round" fill="transparent" />
+                            <defs>
+                                <linearGradient id="score-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="#00f3ff" />
+                                    <stop offset="50%" stop-color="#b026ff" />
+                                    <stop offset="100%" stop-color="#ff007f" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div class="absolute flex flex-col items-center">
+                            <span id="score-percentage" class="text-4xl font-black gradient-text font-orbitron">0%</span>
+                            <span id="score-ratio" class="text-xs font-semibold text-gray-400 mt-1">0 из 0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-lg mx-auto pt-2">
+                    <div class="glass-panel p-3.5 rounded-2xl">
+                        <span class="text-xs text-gray-400 block font-medium">Время</span>
+                        <strong id="res-time-spent" class="text-base text-white font-bold font-mono">00:00</strong>
+                    </div>
+                    <div class="glass-panel p-3.5 rounded-2xl">
+                        <span class="text-xs text-gray-400 block font-medium">Точность</span>
+                        <strong id="res-accuracy" class="text-base text-white font-bold font-mono">0%</strong>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1 glass-panel p-3.5 rounded-2xl">
+                        <span class="text-xs text-gray-400 block font-medium">Ранг</span>
+                        <strong id="res-rank" class="text-base text-neon-amber font-bold font-orbitron">Знаток</strong>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-center gap-3 pt-4">
+                    <button onclick="retakeCurrentQuiz()" class="relative group overflow-hidden rounded-xl p-[1px] font-bold">
+                        <span class="absolute inset-0 bg-gradient-to-r from-neon-cyan to-neon-purple rounded-xl"></span>
+                        <span class="relative px-6 py-3 bg-space-900 rounded-[11px] text-white flex items-center gap-2 group-hover:bg-opacity-70 transition-all">
+                            <i class="fa-solid fa-rotate-right"></i> Пройти снова
+                        </span>
+                    </button>
+                    <button onclick="openCertificateModal()" id="btn-cert-modal" class="glass-panel px-6 py-3 rounded-xl text-neon-amber font-semibold hover:border-neon-amber/50 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-award"></i> Сертификат
+                    </button>
+                    <button onclick="navigateTo('catalog')" class="glass-panel px-6 py-3 rounded-xl text-gray-300 font-semibold hover:text-white transition-all">
+                        В каталог
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <h3 class="text-xl font-bold flex items-center gap-2 font-orbitron">
+                    <i class="fa-solid fa-list-check text-neon-cyan"></i> Детальный разбор
+                </h3>
+                <div id="results-breakdown-list" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <!-- ============ VIEW: CREATE ============ -->
+        <div id="view-create" class="view-section hidden max-w-4xl mx-auto">
+            <div class="glass-panel p-8 rounded-3xl space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold flex items-center gap-2 font-orbitron">
+                        <i class="fa-solid fa-wand-magic-sparkles text-neon-purple"></i> Конструктор теста
+                    </h2>
+                    <p class="text-gray-400 text-sm mt-1">Соберите собственную миссию с вопросами и вариантами ответов.</p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono">Название *</label>
+                        <input type="text" id="create-quiz-title" placeholder="например, Основы Python" class="w-full px-4 py-3 bg-space-800/80 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-neon-cyan focus:outline-none">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono">Категория *</label>
+                        <select id="create-quiz-category" class="w-full px-4 py-3 bg-space-800/80 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-neon-cyan focus:outline-none">
+                            <option value="IT">IT & Веб</option>
+                            <option value="Наука">Наука и Космос</option>
+                            <option value="История">История</option>
+                            <option value="Логика">Логика</option>
+                            <option value="Общее">Общие знания</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono">Сложность</label>
+                        <select id="create-quiz-difficulty" class="w-full px-4 py-3 bg-space-800/80 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-neon-cyan focus:outline-none">
+                            <option value="Легкий">Легкий</option>
+                            <option value="Средний" selected>Средний</option>
+                            <option value="Сложный">Сложный</option>
+                        </select>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono">Время (мин)</label>
+                        <input type="number" id="create-quiz-time" min="1" max="60" value="5" class="w-full px-4 py-3 bg-space-800/80 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-neon-cyan focus:outline-none">
+                    </div>
+                    <div class="md:col-span-2 space-y-2">
+                        <label class="text-xs font-bold uppercase tracking-wider text-gray-400 font-mono">Описание</label>
+                        <textarea id="create-quiz-desc" rows="2" placeholder="Краткое описание миссии..." class="w-full px-4 py-3 bg-space-800/80 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:ring-2 focus:ring-neon-cyan focus:outline-none"></textarea>
+                    </div>
+                </div>
+
+                <hr class="border-white/10">
+
+                <div class="space-y-5">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-white font-orbitron">Вопросы</h3>
+                        <button onclick="addQuestionBuilderCard()" class="px-4 py-2 rounded-xl bg-neon-purple/20 text-neon-purple border border-neon-purple/30 font-semibold text-xs hover:bg-neon-purple/30 transition-all flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i> Добавить вопрос
+                        </button>
+                    </div>
+                    <div id="creator-questions-list" class="space-y-5"></div>
+                </div>
+
+                <div class="pt-4 flex justify-end gap-3">
+                    <button onclick="navigateTo('catalog')" class="glass-panel px-6 py-3 rounded-xl text-gray-300 font-semibold hover:text-white transition-all">Отмена</button>
+                    <button onclick="saveCustomQuiz()" class="relative group overflow-hidden rounded-xl p-[1px] font-bold">
+                        <span class="absolute inset-0 bg-gradient-to-r from-neon-cyan to-neon-purple rounded-xl"></span>
+                        <span class="relative px-8 py-3 bg-space-900 rounded-[11px] text-white flex items-center gap-2 group-hover:bg-opacity-70 transition-all">
+                            <i class="fa-solid fa-floppy-disk"></i> Сохранить
+                        </span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ VIEW: STATS ============ -->
+        <div id="view-stats" class="view-section hidden max-w-5xl mx-auto space-y-8">
+            <div class="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <h2 class="text-3xl font-extrabold tracking-tight font-orbitron">Ваша Статистика</h2>
+                    <p class="text-gray-400 text-sm mt-1">Телеметрия пройденных миссий и ваши достижения.</p>
+                </div>
+                <button onclick="clearUserHistory()" class="px-4 py-2 rounded-xl bg-neon-pink/10 text-neon-pink border border-neon-pink/30 text-xs font-semibold hover:bg-neon-pink/20 transition-all">
+                    <i class="fa-solid fa-trash-can mr-1"></i> Очистить историю
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                <div class="glass-panel p-5 rounded-2xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-neon-cyan/15 text-neon-cyan flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-check-double"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-semibold text-gray-400 block">Всего тестов</span>
+                        <span id="stat-total-tests" class="text-2xl font-black text-white font-orbitron">0</span>
+                    </div>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-neon-green/15 text-neon-green flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-percent"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-semibold text-gray-400 block">Средний балл</span>
+                        <span id="stat-avg-score" class="text-2xl font-black text-white font-orbitron">0%</span>
+                    </div>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-neon-purple/15 text-neon-purple flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-crown"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-semibold text-gray-400 block">Лучшая категория</span>
+                        <span id="stat-best-cat" class="text-2xl font-black text-white font-orbitron">-</span>
+                    </div>
+                </div>
+                <div class="glass-panel p-5 rounded-2xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-xl bg-neon-amber/15 text-neon-amber flex items-center justify-center text-xl">
+                        <i class="fa-solid fa-stopwatch"></i>
+                    </div>
+                    <div>
+                        <span class="text-xs font-semibold text-gray-400 block">Время в тестах</span>
+                        <span id="stat-total-time" class="text-2xl font-black text-white font-orbitron">0м</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel rounded-3xl p-6 space-y-4">
+                <h3 class="text-lg font-bold font-orbitron">История прохождения</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm text-gray-300">
+                        <thead class="text-xs uppercase bg-space-800/80 text-gray-400">
+                            <tr>
+                                <th class="p-3.5">Тест</th>
+                                <th class="p-3.5">Категория</th>
+                                <th class="p-3.5">Результат</th>
+                                <th class="p-3.5">Время</th>
+                                <th class="p-3.5">Дата</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="divide-y divide-white/5"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between border-t border-white/5 text-xs text-gray-500 gap-4">
+        <div class="font-mono">
+            © 2026 Cosmic QuizMaster Systems // <span class="text-neon-green">ALL SYSTEMS: OK</span>
+        </div>
+        <div class="flex items-center gap-5 font-mono">
+            <span class="hover:text-neon-cyan cursor-pointer transition-colors" onclick="showToast('Широта: 40.7128° N, Долгота: 74.0060° W', 'info')">Координаты</span>
+            <span class="hover:text-neon-cyan cursor-pointer transition-colors" onclick="showToast('Статус сети: СТАБИЛЬНЫЙ', 'success')">Состояние сети</span>
+            <span class="hover:text-neon-cyan cursor-pointer transition-colors" onclick="showToast('Кэш очищен. Ошибок не обнаружено.', 'info')">Сброс кэша</span>
+        </div>
+    </footer>
+
+    <!-- ==================== CERTIFICATE MODAL ==================== -->
+    <div id="certificate-modal" class="fixed inset-0 z-50 bg-space-900/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="glass-panel w-full max-w-3xl rounded-3xl p-6 sm:p-8 space-y-6 relative overflow-hidden">
+            <button onclick="closeCertificateModal()" class="absolute top-5 right-5 text-gray-400 hover:text-neon-pink text-xl z-10">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+
+            <div id="printable-certificate" class="bg-gradient-to-br from-space-800 via-space-900 to-space-800 border-4 border-neon-amber/40 p-8 sm:p-12 rounded-2xl text-center space-y-6 relative">
+                <div class="border-2 border-dashed border-neon-amber/20 p-6 sm:p-10 rounded-xl space-y-6">
+                    <div class="flex justify-center">
+                        <div class="w-16 h-16 rounded-full bg-gradient-to-br from-neon-cyan via-neon-purple to-neon-pink flex items-center justify-center text-white text-2xl shadow-xl shadow-neon-purple/30">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="text-xs font-extrabold uppercase tracking-widest text-neon-amber font-mono">Сертификат об успешном прохождении</span>
+                        <h2 class="text-2xl sm:text-4xl font-extrabold mt-2 text-white tracking-tight font-orbitron">QuizMaster Certification</h2>
+                    </div>
+                    <p class="text-gray-400 text-sm max-w-md mx-auto">
+                        Настоящий сертификат подтверждает успешное прохождение тестирования и высокий уровень подготовки оператора.
+                    </p>
+                    <div class="py-2">
+                        <span class="text-xs text-gray-500 uppercase block font-semibold font-mono">Название теста:</span>
+                        <strong id="cert-quiz-name" class="text-xl sm:text-2xl font-bold gradient-text">—</strong>
+                    </div>
+                    <div class="flex justify-around items-center pt-4 border-t border-white/10 text-xs">
+                        <div>
+                            <span class="text-gray-500 block font-mono">Результат:</span>
+                            <strong id="cert-score" class="text-base text-neon-green font-bold font-mono">100%</strong>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 block font-mono">Дата выдачи:</span>
+                            <strong id="cert-date" class="text-base text-gray-200 font-bold font-mono">01.10.2026</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="closeCertificateModal()" class="glass-panel px-5 py-2.5 rounded-xl text-gray-300 font-semibold text-sm hover:text-white">Закрыть</button>
+                <button onclick="window.print()" class="relative group overflow-hidden rounded-xl p-[1px] font-bold">
+                    <span class="absolute inset-0 bg-gradient-to-r from-neon-amber to-neon-pink rounded-xl"></span>
+                    <span class="relative px-5 py-2.5 bg-space-900 rounded-[11px] text-white flex items-center gap-2 text-sm group-hover:bg-opacity-70">
+                        <i class="fa-solid fa-print"></i> Распечатать
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JAVASCRIPT ==================== -->
+    <script>
+    // ================================================================
+    // 1. STARFIELD CANVAS
+    // ================================================================
+    const bgCanvas = document.getElementById('bg-canvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    let stars = [];
+    let nebulae = [];
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+    const numStars = 160;
+
+    function resizeBgCanvas() {
+        bgCanvas.width = window.innerWidth;
+        bgCanvas.height = window.innerHeight;
+        initStars();
+        initNebulae();
+    }
+
+    function initStars() {
+        stars = [];
+        for (let i = 0; i < numStars; i++) {
+            stars.push({
+                x: Math.random() * bgCanvas.width,
+                y: Math.random() * bgCanvas.height,
+                size: Math.random() * 2 + 0.5,
+                alpha: Math.random(),
+                speed: Math.random() * 0.02 + 0.005,
+                color: Math.random() > 0.8 ? '#00f3ff' : (Math.random() > 0.6 ? '#b026ff' : '#ffffff')
+            });
+        }
+    }
+
+    function initNebulae() {
+        nebulae = [
+            { x: bgCanvas.width * 0.2, y: bgCanvas.height * 0.3, radius: 300, color: 'rgba(176, 38, 255, 0.08)' },
+            { x: bgCanvas.width * 0.8, y: bgCanvas.height * 0.7, radius: 350, color: 'rgba(0, 243, 255, 0.07)' },
+            { x: bgCanvas.width * 0.5, y: bgCanvas.height * 0.5, radius: 250, color: 'rgba(255, 0, 127, 0.05)' }
+        ];
+    }
+
+    function renderBgCanvas() {
+        bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+        nebulae.forEach(n => {
+            const grad = bgCtx.createRadialGradient(n.x, n.y, 10, n.x, n.y, n.radius);
+            grad.addColorStop(0, n.color);
+            grad.addColorStop(1, 'transparent');
+            bgCtx.fillStyle = grad;
+            bgCtx.beginPath();
+            bgCtx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+            bgCtx.fill();
+        });
+
+        const offsetX = (mouseX - bgCanvas.width / 2) * 0.03;
+        const offsetY = (mouseY - bgCanvas.height / 2) * 0.03;
+
+        stars.forEach(star => {
+            star.alpha += star.speed;
+            if (star.alpha > 1 || star.alpha < 0) star.speed = -star.speed;
+
+            bgCtx.save();
+            bgCtx.globalAlpha = Math.abs(star.alpha);
+            bgCtx.fillStyle = star.color;
+            bgCtx.beginPath();
+            bgCtx.arc(star.x + offsetX * star.size, star.y + offsetY * star.size, star.size, 0, Math.PI * 2);
+            bgCtx.fill();
+            bgCtx.restore();
+        });
+
+        requestAnimationFrame(renderBgCanvas);
+    }
+
+    window.addEventListener('resize', resizeBgCanvas);
+    window.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+
+    resizeBgCanvas();
+    renderBgCanvas();
+
+    // ================================================================
+    // 2. WEB AUDIO SYNTH (Ambient + SFX)
+    // ================================================================
+    let audioCtx = null;
+    let soundEnabled = false;
+    let ambientOscillator = null;
+    let ambientGainNode = null;
+
+    function getAudioContext() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        return audioCtx;
+    }
+
+    function toggleSound() {
+        soundEnabled = !soundEnabled;
+        const icon = document.getElementById('sound-icon');
+        if (soundEnabled) {
+            icon.className = 'fa-solid fa-volume-high text-neon-cyan';
+            startAmbientSynth();
+            showToast('Космический звук активирован', 'success');
+            playSound('click');
+        } else {
+            icon.className = 'fa-solid fa-volume-xmark';
+            stopAmbientSynth();
+            showToast('Звук отключён', 'info');
+        }
+    }
+
+    function startAmbientSynth() {
+        const ctx = getAudioContext();
+        if (!ctx || ambientOscillator) return;
+
+        ambientOscillator = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        ambientGainNode = ctx.createGain();
+
+        ambientOscillator.type = 'sawtooth';
+        ambientOscillator.frequency.setValueAtTime(55, ctx.currentTime);
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(180, ctx.currentTime);
+
+        ambientGainNode.gain.setValueAtTime(0.001, ctx.currentTime);
+        ambientGainNode.gain.exponentialRampToValueAtTime(0.06, ctx.currentTime + 2);
+
+        ambientOscillator.connect(filter);
+        filter.connect(ambientGainNode);
+        ambientGainNode.connect(ctx.destination);
+        ambientOscillator.start();
+    }
+
+    function stopAmbientSynth() {
+        if (ambientGainNode && audioCtx) {
+            ambientGainNode.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.5);
+            setTimeout(() => {
+                if (ambientOscillator) {
+                    ambientOscillator.stop();
+                    ambientOscillator.disconnect();
+                    ambientOscillator = null;
+                }
+            }, 500);
+        }
+    }
+
+    function playSound(type) {
+        if (!soundEnabled) return;
+        const ctx = getAudioContext();
+        if (!ctx) return;
+
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        if (type === 'click') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.exponentialRampToValueAtTime(200, now + 0.08);
+            gain.gain.setValueAtTime(0.12, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+            osc.start(now); osc.stop(now + 0.08);
+        } else if (type === 'select') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(440, now);
+            osc.frequency.setValueAtTime(880, now + 0.05);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now); osc.stop(now + 0.1);
+        } else if (type === 'correct') {
+            osc.type = 'sine';
+            [523.25, 659.25, 783.99].forEach((f, i) => {
+                osc.frequency.setValueAtTime(f, now + i * 0.08);
+            });
+            gain.gain.setValueAtTime(0.18, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now); osc.stop(now + 0.3);
+        } else if (type === 'wrong') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(220, now);
+            osc.frequency.setValueAtTime(180, now + 0.1);
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+            osc.start(now); osc.stop(now + 0.25);
+        } else if (type === 'fanfare') {
+            [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.connect(g); g.connect(ctx.destination);
+                o.type = 'triangle';
+                o.frequency.setValueAtTime(freq, now + i * 0.08);
+                g.gain.setValueAtTime(0.15, now + i * 0.08);
+                g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.2);
+                o.start(now + i * 0.08);
+                o.stop(now + i * 0.08 + 0.2);
+            });
+        }
+    }
+
+    // ================================================================
+    // 3. DATA
+    // ================================================================
+    const DEFAULT_QUIZZES = [
+        {
+            id: 'quiz-it-1', title: 'Python & Веб-разработка', category: 'IT', difficulty: 'Средний',
+            timeMinutes: 5, description: 'Проверьте знание синтаксиса Python, базовых веб-протоколов и фреймворков.',
+            questions: [
+                { text: 'Что выведет выражение type([]) в языке Python?', type: 'single',
+                  options: ['<class "tuple">', '<class "list">', '<class "array">', '<class "dict">'],
+                  correct: 1, explanation: 'Квадратные скобки [] создают список (class "list").' },
+                { text: 'Какой HTTP статус ответа сервера означает "Не найдено" (Not Found)?', type: 'single',
+                  options: ['200', '403', '404', '500'], correct: 2,
+                  explanation: 'Код 404 — ресурс не найден. Код 200 — успех. Код 403 — доступ запрещён.' },
+                { text: 'Выберите свойства, относящиеся к CSS Flexbox:', type: 'multiple',
+                  options: ['display: flex', 'align-items', 'grid-template-columns', 'flex-direction'],
+                  correct: [0, 1, 3], explanation: 'grid-template-columns относится к CSS Grid, остальные — к Flexbox.' },
+                { text: 'Выражение [] == ![] в JavaScript возвращает true.', type: 'boolean',
+                  options: ['Правда', 'Ложь'], correct: 0,
+                  explanation: 'Из-за приведения типов [] == ![] вычисляется как true.' },
+                { text: 'Какая функция в Python возвращает количество элементов списка?', type: 'single',
+                  options: ['count()', 'length()', 'len()', 'size()'], correct: 2,
+                  explanation: 'Встроенная функция len() возвращает длину последовательности.' }
+            ]
+        },
+        {
+            id: 'quiz-science-1', title: 'Астрономия и Космос', category: 'Наука', difficulty: 'Легкий',
+            timeMinutes: 4, description: 'Увлекательный тест о планетах, звёздах и исследовании Вселенной.',
+            questions: [
+                { text: 'Какая планета Солнечной системы самая горячая?', type: 'single',
+                  options: ['Меркурий', 'Венера', 'Марс', 'Юпитер'], correct: 1,
+                  explanation: 'Венера (~465°C) из-за парникового эффекта.' },
+                { text: 'Сколько времени свет идёт от Солнца до Земли?', type: 'single',
+                  options: ['8 секунд', '8 минут', '8 часов', 'Мгновенно'], correct: 1,
+                  explanation: 'Около 8 минут и 20 секунд.' },
+                { text: 'Какие планеты — газовые гиганты?', type: 'multiple',
+                  options: ['Юпитер', 'Марс', 'Сатурн', 'Венера'], correct: [0, 2],
+                  explanation: 'Юпитер и Сатурн — газовые гиганты.' },
+                { text: 'Солнце по классификации — жёлтый карлик.', type: 'boolean',
+                  options: ['Правда', 'Ложь'], correct: 0,
+                  explanation: 'Спектральный класс G2V.' }
+            ]
+        },
+        {
+            id: 'quiz-history-1', title: 'Всемирная История', category: 'История', difficulty: 'Сложный',
+            timeMinutes: 6, description: 'Ключевые исторические события и великие деятели прошлых эпох.',
+            questions: [
+                { text: 'В каком году запущен первый искусственный спутник Земли?', type: 'single',
+                  options: ['1945', '1957', '1961', '1969'], correct: 1,
+                  explanation: 'Спутник-1 — 4 октября 1957 года, СССР.' },
+                { text: 'Какая цивилизация построила Мачу-Пикчу?', type: 'single',
+                  options: ['Майя', 'Ацтеки', 'Инки', 'Ольмеки'], correct: 2,
+                  explanation: 'Мачу-Пикчу построен инками в XV веке.' },
+                { text: 'Великой Китайской стене более 5000 лет.', type: 'boolean',
+                  options: ['Правда', 'Ложь'], correct: 1,
+                  explanation: 'Первые участки начали строить в III веке до н.э.' }
+            ]
+        },
+        {
+            id: 'quiz-logic-1', title: 'Загадки и Логика', category: 'Логика', difficulty: 'Легкий',
+            timeMinutes: 3, description: 'Проверка сообразительности и нестандартного мышления.',
+            questions: [
+                { text: 'У отца Мери 5 дочерей: Нана, Нене, Нини, Ноно. Как зовут пятую?', type: 'single',
+                  options: ['Нуну', 'Мери', 'Настенька', 'Николь'], correct: 1,
+                  explanation: 'Пятую зовут Мери — сказано в начале.' },
+                { text: 'Сколько месяцев в году имеют 28 дней?', type: 'single',
+                  options: ['1 (Февраль)', 'Каждый 4-й год', 'Все 12', 'Ни одного'], correct: 2,
+                  explanation: 'Все 12 месяцев имеют минимум 28 дней.' },
+                { text: 'Электропоезд едет на юг, ветер дует на север. Куда идёт дым?', type: 'single',
+                  options: ['На север', 'На юг', 'У электропоезда нет дыма', 'На восток'], correct: 2,
+                  explanation: 'Электропоезд не выделяет дыма.' }
+            ]
+        }
+    ];
+
+    // ================================================================
+    // 4. STATE
+    // ================================================================
+    let quizzes = [];
+    let activeQuiz = null;
+    let currentQuestionIdx = 0;
+    let userAnswers = {};
+    let flaggedQuestions = new Set();
+    let timerInterval = null;
+    let secondsRemaining = 0;
+    let timeSpentSeconds = 0;
+    let activeCategory = 'all';
+    let creatorQuestions = [];
+
+    // ================================================================
+    // 5. INIT
+    // ================================================================
+    function initApp() {
+        const storedQuizzes = localStorage.getItem('quizmaster_custom_quizzes');
+        if (storedQuizzes) {
+            try {
+                const parsed = JSON.parse(storedQuizzes);
+                quizzes = [...DEFAULT_QUIZZES, ...parsed];
+            } catch (e) { quizzes = [...DEFAULT_QUIZZES]; }
+        } else {
+            quizzes = [...DEFAULT_QUIZZES];
+        }
+
+        renderCatalog();
+        updateHeaderStats();
+        document.getElementById('home-quiz-count').innerText = quizzes.length;
+
+        document.addEventListener('keydown', handleGlobalKeyDown);
+    }
+
+    // ================================================================
+    // 6. NAVIGATION
+    // ================================================================
+    function navigateTo(viewName) {
+        playSound('click');
+        document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+
+        const target = document.getElementById('view-' + viewName);
+        if (target) target.classList.remove('hidden');
+
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('bg-neon-cyan/15', 'text-neon-cyan', 'border', 'border-neon-cyan/30');
+            btn.classList.add('text-gray-400');
+        });
+
+        const activeBtn = document.getElementById('nav-' + viewName);
+        if (activeBtn) {
+            activeBtn.classList.add('bg-neon-cyan/15', 'text-neon-cyan', 'border', 'border-neon-cyan/30');
+            activeBtn.classList.remove('text-gray-400');
+        }
+
+        if (viewName === 'stats') renderUserStats();
+        else if (viewName === 'create') resetCreateForm();
+
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function toggleMode() {
+        // Cosmetic 200 <-> 404 toggle
+        const isCurrently200 = document.getElementById('mode-text').textContent.includes('200');
+        const modeText = document.getElementById('mode-text');
+        const modeIcon = document.getElementById('mode-icon');
+        if (isCurrently200) {
+            modeText.textContent = '404 LOST';
+            modeIcon.className = 'fa-solid fa-triangle-exclamation text-neon-pink';
+            showToast('Режим симуляции ошибки 404', 'warning');
+        } else {
+            modeText.textContent = '200 OK';
+            modeIcon.className = 'fa-solid fa-circle-check text-neon-green';
+            showToast('Все системы в норме: 200 OK', 'success');
+        }
+        playSound('click');
+    }
+
+    // ================================================================
+    // 7. CATALOG
+    // ================================================================
+    function selectCategory(cat) {
+        playSound('click');
+        activeCategory = cat;
+        document.querySelectorAll('.cat-pill').forEach(btn => {
+            const isActive = btn.dataset.cat === cat;
+            btn.className = isActive
+                ? 'cat-pill px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap bg-neon-cyan text-space-900 border border-neon-cyan'
+                : 'cat-pill px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap glass-panel text-gray-400 hover:text-white';
+        });
+        renderCatalog();
+    }
+
+    function filterQuizzes() { renderCatalog(); }
+
+    function renderCatalog() {
+        const container = document.getElementById('quiz-grid');
+        const searchVal = document.getElementById('search-quiz-input').value.toLowerCase().trim();
+
+        const filtered = quizzes.filter(q => {
+            const matchesCat = (activeCategory === 'all') ||
+                (activeCategory === 'Мои тесты' ? q.id.startsWith('custom-') : q.category === activeCategory);
+            const matchesSearch = q.title.toLowerCase().includes(searchVal) || q.description.toLowerCase().includes(searchVal);
+            return matchesCat && matchesSearch;
+        });
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-full text-center py-12 glass-panel rounded-3xl space-y-3">
+                    <i class="fa-solid fa-folder-open text-4xl text-gray-600"></i>
+                    <p class="text-gray-400 text-base font-semibold">Тесты не найдены</p>
+                    <p class="text-xs text-gray-500 font-mono">Попробуйте изменить категорию или запрос</p>
+                </div>`;
+            return;
+        }
+
+        container.innerHTML = filtered.map(q => {
+            let badgeColor = 'bg-neon-green/10 text-neon-green border-neon-green/30';
+            if (q.difficulty === 'Средний') badgeColor = 'bg-neon-amber/10 text-neon-amber border-neon-amber/30';
+            if (q.difficulty === 'Сложный') badgeColor = 'bg-neon-pink/10 text-neon-pink border-neon-pink/30';
+
+            return `
+                <div class="glass-panel glass-panel-hover p-6 rounded-3xl flex flex-col justify-between space-y-5">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold border ${badgeColor} font-mono">${q.difficulty}</span>
+                            <span class="text-xs text-gray-400 flex items-center gap-1 font-medium">
+                                <i class="fa-solid fa-layer-group text-neon-cyan"></i> ${q.category}
+                            </span>
+                        </div>
+                        <h3 class="text-xl font-bold text-white leading-snug line-clamp-2 font-orbitron">${q.title}</h3>
+                        <p class="text-gray-400 text-xs leading-relaxed line-clamp-3">${q.description}</p>
+                    </div>
+                    <div class="space-y-4 pt-2 border-t border-white/5">
+                        <div class="flex items-center justify-between text-xs text-gray-400 font-medium font-mono">
+                            <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-question text-neon-cyan"></i> ${q.questions.length} вопросов</span>
+                            <span class="flex items-center gap-1.5"><i class="fa-regular fa-clock text-neon-amber"></i> ~${q.timeMinutes} мин</span>
+                        </div>
+                        <button onclick="startQuiz('${q.id}')" class="w-full py-3 rounded-xl relative group overflow-hidden p-[1px]">
+                            <span class="absolute inset-0 bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-pink rounded-xl"></span>
+                            <span class="relative block py-2.5 bg-space-900 rounded-[11px] text-white font-bold text-sm flex items-center justify-center gap-2 group-hover:bg-opacity-70 transition-all">
+                                <span>Начать миссию</span> <i class="fa-solid fa-play text-xs"></i>
+                            </span>
+                        </button>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    // ================================================================
+    // 8. QUIZ RUNNER
+    // ================================================================
+    function startQuiz(quizId) {
+        playSound('click');
+        activeQuiz = quizzes.find(q => q.id === quizId);
+        if (!activeQuiz) return;
+
+        currentQuestionIdx = 0;
+        userAnswers = {};
+        flaggedQuestions.clear();
+        timeSpentSeconds = 0;
+        secondsRemaining = activeQuiz.timeMinutes * 60;
+
+        document.getElementById('quiz-title-badge').innerText = activeQuiz.title;
+        document.getElementById('total-q-count').innerText = activeQuiz.questions.length;
+
+        startTimer();
+        renderQuestion();
+        navigateTo('quiz');
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        updateTimerDisplay();
+        timerInterval = setInterval(() => {
+            secondsRemaining--;
+            timeSpentSeconds++;
+            updateTimerDisplay();
+            if (secondsRemaining <= 0) {
+                clearInterval(timerInterval);
+                showToast('Время истекло!', 'warning');
+                finishQuiz();
+            }
+        }, 1000);
+    }
+
+    function updateTimerDisplay() {
+        const mins = Math.floor(secondsRemaining / 60);
+        const secs = secondsRemaining % 60;
+        document.getElementById('quiz-timer-text').innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        const c = document.getElementById('quiz-timer-container');
+        c.className = secondsRemaining < 60
+            ? 'flex items-center gap-2 px-4 py-2 rounded-xl bg-neon-pink/20 border border-neon-pink/60 font-mono text-base font-bold text-neon-pink animate-pulse'
+            : 'flex items-center gap-2 px-4 py-2 rounded-xl bg-space-800/90 border border-neon-amber/40 font-mono text-base font-bold text-neon-amber';
+    }
+
+    function renderQuestion() {
+        const q = activeQuiz.questions[currentQuestionIdx];
+        document.getElementById('current-q-index').innerText = currentQuestionIdx + 1;
+
+        const pct = ((currentQuestionIdx + 1) / activeQuiz.questions.length) * 100;
+        document.getElementById('quiz-progress-bar').style.width = pct + '%';
+
+        const typeBadge = document.getElementById('question-type-badge');
+        if (q.type === 'multiple') typeBadge.innerHTML = '<i class="fa-solid fa-list-check"></i> Несколько вариантов';
+        else if (q.type === 'boolean') typeBadge.innerHTML = '<i class="fa-solid fa-toggle-on"></i> Верно / Неверно';
+        else typeBadge.innerHTML = '<i class="fa-solid fa-circle-dot"></i> Один вариант';
+
+        document.getElementById('question-text').innerText = q.text;
+
+        const flagBtn = document.getElementById('flag-question-btn');
+        const flagIcon = document.getElementById('flag-icon');
+        if (flaggedQuestions.has(currentQuestionIdx)) {
+            flagBtn.className = 'px-3.5 py-2 rounded-xl border border-neon-amber bg-neon-amber/10 text-neon-amber transition-all text-xs font-semibold flex items-center gap-2';
+            flagIcon.className = 'fa-solid fa-bookmark';
+        } else {
+            flagBtn.className = 'px-3.5 py-2 rounded-xl border border-white/10 text-gray-400 hover:text-neon-amber hover:border-neon-amber/50 transition-all text-xs font-semibold flex items-center gap-2';
+            flagIcon.className = 'fa-regular fa-bookmark';
+        }
+
+        const container = document.getElementById('options-container');
+        const currentSelected = userAnswers[currentQuestionIdx];
+
+        container.innerHTML = q.options.map((opt, optIdx) => {
+            let isSelected = false;
+            if (q.type === 'multiple') isSelected = Array.isArray(currentSelected) && currentSelected.includes(optIdx);
+            else isSelected = currentSelected === optIdx;
+
+            const activeClasses = isSelected
+                ? 'border-neon-cyan bg-neon-cyan/10 text-white shadow-md shadow-neon-cyan/10'
+                : 'border-white/10 bg-space-800/50 text-gray-300 hover:border-neon-cyan/40 hover:bg-space-700/50';
+
+            const icon = q.type === 'multiple'
+                ? (isSelected ? '<i class="fa-solid fa-square-check text-neon-cyan"></i>' : '<i class="fa-regular fa-square text-gray-500"></i>')
+                : (isSelected ? '<i class="fa-solid fa-circle-check text-neon-cyan"></i>' : '<i class="fa-regular fa-circle text-gray-500"></i>');
+
+            return `
+                <button onclick="handleOptionSelect(${optIdx})" class="option-btn w-full text-left p-4 rounded-2xl border ${activeClasses} flex items-center justify-between group">
+                    <div class="flex items-center gap-3">
+                        <span class="w-7 h-7 rounded-lg bg-space-700 text-gray-400 flex items-center justify-center font-semibold text-xs border border-white/10 font-mono group-hover:text-white">${optIdx + 1}</span>
+                        <span class="text-sm font-medium leading-normal">${opt}</span>
+                    </div>
+                    <div class="text-lg">${icon}</div>
+                </button>`;
+        }).join('');
+
+        document.getElementById('btn-prev-q').disabled = currentQuestionIdx === 0;
+        const nextBtn = document.getElementById('btn-next-q');
+        if (currentQuestionIdx === activeQuiz.questions.length - 1) {
+            nextBtn.innerHTML = '<span class="relative px-6 py-3 bg-space-900 rounded-[11px] text-white flex items-center gap-2 group-hover:bg-opacity-70"><span>Завершить</span> <i class="fa-solid fa-check"></i></span><span class="absolute inset-0 bg-gradient-to-r from-neon-green to-neon-cyan rounded-xl -z-10"></span>';
+        } else {
+            nextBtn.innerHTML = '<span class="absolute inset-0 bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-pink rounded-xl"></span><span class="relative px-6 py-3 bg-space-900 rounded-[11px] text-white flex items-center gap-2 group-hover:bg-opacity-70 transition-all"><span>Далее</span> <i class="fa-solid fa-chevron-right"></i></span>';
+        }
+
+        renderNavigatorGrid();
+    }
+
+    function handleOptionSelect(optIdx) {
+        playSound('select');
+        const q = activeQuiz.questions[currentQuestionIdx];
+        if (q.type === 'multiple') {
+            if (!Array.isArray(userAnswers[currentQuestionIdx])) userAnswers[currentQuestionIdx] = [];
+            const arr = userAnswers[currentQuestionIdx];
+            const i = arr.indexOf(optIdx);
+            if (i > -1) arr.splice(i, 1); else arr.push(optIdx);
+        } else {
+            userAnswers[currentQuestionIdx] = optIdx;
+        }
+        renderQuestion();
+    }
+
+    function toggleFlagCurrentQuestion() {
+        playSound('click');
+        if (flaggedQuestions.has(currentQuestionIdx)) flaggedQuestions.delete(currentQuestionIdx);
+        else flaggedQuestions.add(currentQuestionIdx);
+        renderQuestion();
+    }
+
+    function prevQuestion() {
+        if (currentQuestionIdx > 0) { playSound('click'); currentQuestionIdx--; renderQuestion(); }
+    }
+
+    function nextQuestion() {
+        if (currentQuestionIdx < activeQuiz.questions.length - 1) {
+            playSound('click'); currentQuestionIdx++; renderQuestion();
+        } else finishQuiz();
+    }
+
+    function renderNavigatorGrid() {
+        const grid = document.getElementById('question-navigator-grid');
+        grid.innerHTML = activeQuiz.questions.map((_, idx) => {
+            const isCurrent = idx === currentQuestionIdx;
+            const isAnswered = userAnswers[idx] !== undefined && (Array.isArray(userAnswers[idx]) ? userAnswers[idx].length > 0 : true);
+            const isFlagged = flaggedQuestions.has(idx);
+
+            let cls = 'bg-space-700 border-white/10 text-gray-400 hover:bg-space-600';
+            if (isAnswered) cls = 'bg-neon-cyan border-neon-cyan text-space-900 font-bold';
+            if (isFlagged) cls = 'bg-neon-amber/20 border-neon-amber text-neon-amber';
+            if (isCurrent) cls += ' ring-2 ring-white ring-offset-2 ring-offset-space-900 font-extrabold';
+
+            return `<button onclick="jumpToQuestion(${idx})" class="w-9 h-9 rounded-xl border text-xs font-bold transition-all flex items-center justify-center font-mono ${cls}">${idx + 1}</button>`;
+        }).join('');
+    }
+
+    function jumpToQuestion(idx) { playSound('click'); currentQuestionIdx = idx; renderQuestion(); }
+
+    function confirmExitQuiz() {
+        if (confirm('Выйти из теста? Прогресс будет потерян.')) {
+            clearInterval(timerInterval);
+            navigateTo('catalog');
+        }
+    }
+
+    function handleGlobalKeyDown(e) {
+        const quizView = document.getElementById('view-quiz');
+        if (!quizView || quizView.classList.contains('hidden')) return;
+
+        if (['1','2','3','4','5'].includes(e.key)) {
+            const idx = parseInt(e.key) - 1;
+            const q = activeQuiz.questions[currentQuestionIdx];
+            if (q && q.options[idx] !== undefined) handleOptionSelect(idx);
+        } else if (e.key === 'ArrowRight' || e.key === 'Enter') nextQuestion();
+        else if (e.key === 'ArrowLeft') prevQuestion();
+    }
+
+    // ================================================================
+    // 9. RESULTS
+    // ================================================================
+    function finishQuiz() {
+        clearInterval(timerInterval);
+
+        let correctCount = 0;
+        activeQuiz.questions.forEach((q, idx) => {
+            const ua = userAnswers[idx];
+            if (q.type === 'multiple') {
+                const ua2 = Array.isArray(ua) ? [...ua].sort() : [];
+                const ca = Array.isArray(q.correct) ? [...q.correct].sort() : [];
+                if (JSON.stringify(ua2) === JSON.stringify(ca)) correctCount++;
+            } else {
+                if (ua === q.correct) correctCount++;
+            }
+        });
+
+        const total = activeQuiz.questions.length;
+        const percentage = Math.round((correctCount / total) * 100);
+
+        if (percentage >= 70) {
+            playSound('fanfare');
+            if (typeof confetti === 'function') confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+        } else playSound('wrong');
+
+        saveQuizResultToHistory({
+            quizId: activeQuiz.id, quizTitle: activeQuiz.title, category: activeQuiz.category,
+            percentage, correctCount, total, timeSpentSeconds,
+            date: new Date().toLocaleDateString('ru-RU')
+        });
+
+        document.getElementById('score-percentage').innerText = percentage + '%';
+        document.getElementById('score-ratio').innerText = `${correctCount} из ${total} верных`;
+
+        const circumference = 2 * Math.PI * 76;
+        document.getElementById('score-circle-progress').style.strokeDashoffset = circumference - (percentage / 100) * circumference;
+
+        const m = Math.floor(timeSpentSeconds / 60);
+        const s = timeSpentSeconds % 60;
+        document.getElementById('res-time-spent').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+        document.getElementById('res-accuracy').innerText = percentage + '%';
+
+        let badgeText = 'Отличный результат!';
+        let rankText = 'Гений Эрудиции';
+        if (percentage < 50) { badgeText = 'Требуется повторение'; rankText = 'Ученик'; }
+        else if (percentage < 80) { badgeText = 'Хорошая работа!'; rankText = 'Знаток'; }
+
+        document.getElementById('result-badge-container').innerText = badgeText;
+        document.getElementById('res-rank').innerText = rankText;
+
+        renderResultsBreakdown();
+        updateHeaderStats();
+        navigateTo('results');
+    }
+
+    function renderResultsBreakdown() {
+        const container = document.getElementById('results-breakdown-list');
+        container.innerHTML = activeQuiz.questions.map((q, idx) => {
+            const ua = userAnswers[idx];
+            let isCorrect = false;
+            if (q.type === 'multiple') {
+                const ua2 = Array.isArray(ua) ? [...ua].sort() : [];
+                const ca = Array.isArray(q.correct) ? [...q.correct].sort() : [];
+                isCorrect = JSON.stringify(ua2) === JSON.stringify(ca);
+            } else isCorrect = ua === q.correct;
+
+            const statusColor = isCorrect ? 'border-neon-green/40 bg-neon-green/5' : 'border-neon-pink/40 bg-neon-pink/5';
+            const statusIcon = isCorrect
+                ? '<span class="text-neon-green font-bold flex items-center gap-1 font-mono text-xs"><i class="fa-solid fa-circle-check"></i> Верно</span>'
+                : '<span class="text-neon-pink font-bold flex items-center gap-1 font-mono text-xs"><i class="fa-solid fa-circle-xmark"></i> Ошибка</span>';
+
+            const optionsHTML = q.options.map((opt, oIdx) => {
+                let style = 'text-gray-400';
+                let userChosen = q.type === 'multiple'
+                    ? (Array.isArray(ua) && ua.includes(oIdx))
+                    : ua === oIdx;
+                let isKey = q.type === 'multiple'
+                    ? (Array.isArray(q.correct) && q.correct.includes(oIdx))
+                    : q.correct === oIdx;
+
+                if (isKey) style = 'text-neon-green font-bold';
+                else if (userChosen && !isKey) style = 'text-neon-pink line-through';
+
+                return `
+                    <div class="text-xs p-2 rounded-lg bg-space-800/80 border border-white/5 flex items-center justify-between ${style}">
+                        <span>${opt}</span>
+                        <span>
+                            ${isKey ? '<i class="fa-solid fa-check text-neon-green"></i>' : ''}
+                            ${userChosen && !isKey ? '<i class="fa-solid fa-xmark text-neon-pink"></i>' : ''}
+                        </span>
+                    </div>`;
+            }).join('');
+
+            return `
+                <div class="glass-panel p-5 rounded-2xl border ${statusColor} space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-gray-400 font-mono">ВОПРОС ${idx + 1}</span>
+                        ${statusIcon}
+                    </div>
+                    <h4 class="text-base font-bold text-white">${q.text}</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${optionsHTML}</div>
+                    ${q.explanation ? `
+                        <div class="p-3 rounded-xl bg-space-800/80 border border-white/5 text-xs text-gray-300">
+                            <strong class="text-neon-cyan block mb-0.5 font-mono"><i class="fa-solid fa-circle-info mr-1"></i> Объяснение:</strong>
+                            ${q.explanation}
+                        </div>` : ''}
+                </div>`;
+        }).join('');
+    }
+
+    function retakeCurrentQuiz() { if (activeQuiz) startQuiz(activeQuiz.id); }
+
+    // ================================================================
+    // 10. CERTIFICATE / HISTORY
+    // ================================================================
+    function openCertificateModal() {
+        playSound('click');
+        if (!activeQuiz) return;
+        document.getElementById('cert-quiz-name').innerText = activeQuiz.title;
+
+        const storedHistory = JSON.parse(localStorage.getItem('quizmaster_history') || '[]');
+        const latest = storedHistory[0] || { percentage: 100, date: new Date().toLocaleDateString('ru-RU') };
+        document.getElementById('cert-score').innerText = latest.percentage + '%';
+        document.getElementById('cert-date').innerText = latest.date;
+        document.getElementById('certificate-modal').classList.remove('hidden');
+    }
+
+    function closeCertificateModal() {
+        playSound('click');
+        document.getElementById('certificate-modal').classList.add('hidden');
+    }
+
+    function saveQuizResultToHistory(obj) {
+        const existing = JSON.parse(localStorage.getItem('quizmaster_history') || '[]');
+        existing.unshift(obj);
+        localStorage.setItem('quizmaster_history', JSON.stringify(existing));
+    }
+
+    function updateHeaderStats() {
+        const history = JSON.parse(localStorage.getItem('quizmaster_history') || '[]');
+        document.getElementById('header-completed-count').innerText = history.length;
+    }
+
+    function renderUserStats() {
+        const history = JSON.parse(localStorage.getItem('quizmaster_history') || '[]');
+        document.getElementById('stat-total-tests').innerText = history.length;
+
+        if (history.length === 0) {
+            document.getElementById('stat-avg-score').innerText = '0%';
+            document.getElementById('stat-best-cat').innerText = '-';
+            document.getElementById('stat-total-time').innerText = '0м';
+            document.getElementById('history-table-body').innerHTML = `
+                <tr><td colspan="5" class="p-6 text-center text-gray-500 text-xs font-mono">История пуста. Пройдите первый тест!</td></tr>`;
+            return;
+        }
+
+        const avg = Math.round(history.reduce((s, i) => s + i.percentage, 0) / history.length);
+        document.getElementById('stat-avg-score').innerText = avg + '%';
+
+        const totalSecs = history.reduce((s, i) => s + (i.timeSpentSeconds || 0), 0);
+        document.getElementById('stat-total-time').innerText = Math.round(totalSecs / 60) + 'м';
+
+        const catMap = {};
+        history.forEach(i => { catMap[i.category] = (catMap[i.category] || 0) + 1; });
+        let bestCat = '-', maxCount = 0;
+        for (const c in catMap) if (catMap[c] > maxCount) { maxCount = catMap[c]; bestCat = c; }
+        document.getElementById('stat-best-cat').innerText = bestCat;
+
+        document.getElementById('history-table-body').innerHTML = history.map(item => `
+            <tr class="hover:bg-white/5 transition-colors">
+                <td class="p-3.5 font-bold text-white">${item.quizTitle}</td>
+                <td class="p-3.5"><span class="px-2.5 py-1 rounded-full text-[11px] bg-space-700 text-gray-300 border border-white/10 font-mono">${item.category}</span></td>
+                <td class="p-3.5 font-bold font-mono ${item.percentage >= 70 ? 'text-neon-green' : 'text-neon-amber'}">${item.percentage}% (${item.correctCount}/${item.total})</td>
+                <td class="p-3.5 text-gray-400 font-mono">${Math.floor((item.timeSpentSeconds || 0) / 60)}м ${(item.timeSpentSeconds || 0) % 60}с</td>
+                <td class="p-3.5 text-gray-400 text-xs font-mono">${item.date}</td>
+            </tr>`).join('');
+    }
+
+    function clearUserHistory() {
+        if (confirm('Очистить всю историю?')) {
+            localStorage.removeItem('quizmaster_history');
+            renderUserStats();
+            updateHeaderStats();
+            showToast('История очищена', 'info');
+        }
+    }
+
+    // ================================================================
+    // 11. CREATOR
+    // ================================================================
+    function resetCreateForm() {
+        document.getElementById('create-quiz-title').value = '';
+        document.getElementById('create-quiz-desc').value = '';
+        document.getElementById('create-quiz-time').value = '5';
+        creatorQuestions = [];
+        addQuestionBuilderCard();
+    }
+
+    function addQuestionBuilderCard() {
+        playSound('click');
+        creatorQuestions.push({
+            id: Date.now() + Math.random(),
+            text: '', type: 'single', options: ['', ''], correct: 0, explanation: ''
+        });
+        renderCreatorQuestions();
+    }
+
+    function removeQuestionBuilderCard(qId) {
+        playSound('click');
+        if (creatorQuestions.length <= 1) { showToast('Должен быть хотя бы 1 вопрос', 'warning'); return; }
+        creatorQuestions = creatorQuestions.filter(q => q.id !== qId);
+        renderCreatorQuestions();
+    }
+
+    function renderCreatorQuestions() {
+        const container = document.getElementById('creator-questions-list');
+        container.innerHTML = creatorQuestions.map((q, qIdx) => `
+            <div class="p-6 rounded-2xl glass-panel space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold uppercase tracking-wider text-neon-cyan font-mono">Вопрос #${qIdx + 1}</span>
+                    <button onclick="removeQuestionBuilderCard(${q.id})" class="text-gray-500 hover:text-neon-pink text-sm">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2 space-y-1">
+                        <label class="text-[11px] font-semibold text-gray-400 font-mono">Текст вопроса *</label>
+                        <input type="text" oninput="updateCreatorQText(${q.id}, this.value)" value="${q.text}" placeholder="Формулировка" class="w-full px-3.5 py-2.5 bg-space-800/80 border border-white/10 rounded-xl text-white text-sm focus:ring-1 focus:ring-neon-cyan focus:outline-none">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[11px] font-semibold text-gray-400 font-mono">Тип</label>
+                        <select onchange="updateCreatorQType(${q.id}, this.value)" class="w-full px-3.5 py-2.5 bg-space-800/80 border border-white/10 rounded-xl text-white text-sm focus:ring-1 focus:ring-neon-cyan focus:outline-none">
+                            <option value="single" ${q.type === 'single' ? 'selected' : ''}>Один вариант</option>
+                            <option value="boolean" ${q.type === 'boolean' ? 'selected' : ''}>Верно / Неверно</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="space-y-2 pt-2">
+                    <label class="text-[11px] font-semibold text-gray-400 font-mono">Варианты (отметьте верный):</label>
+                    <div class="space-y-2">
+                        ${q.options.map((opt, oIdx) => `
+                            <div class="flex items-center gap-3">
+                                <input type="radio" name="correct-${q.id}" ${q.correct === oIdx ? 'checked' : ''} onchange="updateCreatorQCorrect(${q.id}, ${oIdx})" class="w-4 h-4 accent-neon-cyan">
+                                <input type="text" oninput="updateCreatorOptionText(${q.id}, ${oIdx}, this.value)" value="${opt}" placeholder="Вариант ${oIdx + 1}" class="w-full px-3 py-2 bg-space-800/80 border border-white/10 rounded-xl text-white text-xs focus:ring-1 focus:ring-neon-cyan focus:outline-none">
+                                ${q.options.length > 2 && q.type !== 'boolean' ? `
+                                    <button onclick="removeCreatorOption(${q.id}, ${oIdx})" class="text-gray-600 hover:text-neon-pink text-xs">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>` : ''}
+                            </div>`).join('')}
+                    </div>
+                    ${q.type !== 'boolean' && q.options.length < 5 ? `
+                        <button onclick="addCreatorOption(${q.id})" class="text-xs text-neon-cyan hover:text-neon-blue font-semibold pt-1 flex items-center gap-1">
+                            <i class="fa-solid fa-plus text-[10px]"></i> Добавить вариант
+                        </button>` : ''}
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[11px] font-semibold text-gray-400 font-mono">Пояснение (необязательно)</label>
+                    <input type="text" oninput="updateCreatorExplanation(${q.id}, this.value)" value="${q.explanation}" placeholder="Почему этот ответ верный?" class="w-full px-3.5 py-2 bg-space-800/80 border border-white/10 rounded-xl text-gray-300 text-xs focus:ring-1 focus:ring-neon-cyan focus:outline-none">
+                </div>
+            </div>`).join('');
+    }
+
+    function updateCreatorQText(qId, val) { const q = creatorQuestions.find(i => i.id === qId); if (q) q.text = val; }
+    function updateCreatorQType(qId, val) {
+        const q = creatorQuestions.find(i => i.id === qId);
+        if (q) {
+            q.type = val;
+            if (val === 'boolean') { q.options = ['Правда', 'Ложь']; q.correct = 0; }
+            else if (q.options.length < 2) q.options = ['', ''];
+            renderCreatorQuestions();
+        }
+    }
+    function updateCreatorOptionText(qId, oIdx, val) { const q = creatorQuestions.find(i => i.id === qId); if (q) q.options[oIdx] = val; }
+    function updateCreatorQCorrect(qId, oIdx) { const q = creatorQuestions.find(i => i.id === qId); if (q) q.correct = oIdx; }
+    function updateCreatorExplanation(qId, val) { const q = creatorQuestions.find(i => i.id === qId); if (q) q.explanation = val; }
+    function addCreatorOption(qId) { const q = creatorQuestions.find(i => i.id === qId); if (q && q.options.length < 5) { q.options.push(''); renderCreatorQuestions(); } }
+    function removeCreatorOption(qId, oIdx) {
+        const q = creatorQuestions.find(i => i.id === qId);
+        if (q && q.options.length > 2) {
+            q.options.splice(oIdx, 1);
+            if (q.correct >= q.options.length) q.correct = 0;
+            renderCreatorQuestions();
+        }
+    }
+
+    function saveCustomQuiz() {
+        const title = document.getElementById('create-quiz-title').value.trim();
+        const category = document.getElementById('create-quiz-category').value;
+        const difficulty = document.getElementById('create-quiz-difficulty').value;
+        const timeMinutes = parseInt(document.getElementById('create-quiz-time').value) || 5;
+        const description = document.getElementById('create-quiz-desc').value.trim();
+
+        if (!title) { showToast('Укажите название теста', 'warning'); return; }
+        for (let i = 0; i < creatorQuestions.length; i++) {
+            const q = creatorQuestions[i];
+            if (!q.text.trim()) { showToast(`Заполните текст в вопросе #${i + 1}`, 'warning'); return; }
+            for (const opt of q.options) {
+                if (!opt.trim()) { showToast(`Заполните варианты в вопросе #${i + 1}`, 'warning'); return; }
+            }
+        }
+
+        const newQuiz = {
+            id: 'custom-' + Date.now(), title, category, difficulty, timeMinutes,
+            description: description || 'Пользовательский тест.',
+            questions: creatorQuestions.map(q => ({
+                text: q.text, type: q.type, options: [...q.options], correct: q.correct, explanation: q.explanation
+            }))
+        };
+
+        const stored = JSON.parse(localStorage.getItem('quizmaster_custom_quizzes') || '[]');
+        stored.unshift(newQuiz);
+        localStorage.setItem('quizmaster_custom_quizzes', JSON.stringify(stored));
+
+        quizzes.unshift(newQuiz);
+        document.getElementById('home-quiz-count').innerText = quizzes.length;
+        showToast('Тест создан и добавлен в каталог!', 'success');
+        playSound('correct');
+        navigateTo('catalog');
+    }
+
+    // ================================================================
+    // 12. TOAST
+    // ================================================================
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+
+        let styles = 'border-neon-cyan/40 text-white';
+        let icon = '<i class="fa-solid fa-circle-info text-neon-cyan"></i>';
+
+        if (type === 'warning') { styles = 'border-neon-amber/40 text-white'; icon = '<i class="fa-solid fa-triangle-exclamation text-neon-amber"></i>'; }
+        else if (type === 'success') { styles = 'border-neon-green/40 text-white'; icon = '<i class="fa-solid fa-circle-check text-neon-green"></i>'; }
+
+        toast.className = `glass-panel px-4 py-3 rounded-xl border ${styles} text-xs shadow-2xl flex items-center gap-3 translate-y-20 opacity-0 transition-all duration-300 pointer-events-auto font-mono`;
+        toast.innerHTML = `${icon} <span>${message}</span>`;
+
+        container.appendChild(toast);
+        setTimeout(() => { toast.classList.remove('translate-y-20', 'opacity-0'); toast.classList.add('translate-y-0', 'opacity-100'); }, 10);
+        setTimeout(() => {
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.remove(), 300);
+        }, 3200);
+    }
+
+    // ================================================================
+    // LAUNCH
+    // ================================================================
+    window.onload = function() {
+        initApp();
+        // Small welcome message when landing on 200 OK page
+        setTimeout(() => showToast('Соединение установлено: 200 OK', 'success'), 600);
+    };
+    </script>
+</body>
+</html>
