@@ -12,6 +12,14 @@ COPY *.html .
 
 WORKDIR /etc/nginx/sites-available
 
-COPY default .
+COPY config/default .
+
+WORKDIR /etc/nginx/
+
+RUN rm nginx.config
+
+COPY config/nginx.conf .
+
+RUN systemclt restart nginx.service
 
 CMD ["nginx", "-g", "daemon off;"]
