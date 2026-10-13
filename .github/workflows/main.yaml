@@ -14,11 +14,11 @@ jobs:
 
     - name: Stop old container (if exists)
       run: |
-        docker stop nginx || true
-        docker rm nginx || true
+        docker stop nginx-container || true
+        docker rm nginx-container || true
 
     - name: Docker build
       run: docker build -t "nginx" .
     
     - name: Docker run
-      run: docker run -d -p 5000:5000 nginx
+      run: docker run -d --name nginx-container -p 5000:5000 nginx
