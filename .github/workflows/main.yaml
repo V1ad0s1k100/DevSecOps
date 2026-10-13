@@ -13,9 +13,9 @@ jobs:
       uses: actions/checkout@v6
 
     - name: Stop old container (if exists)
-          run: |
-            docker stop nginx || true
-            docker rm nginx || true
+      run: |
+        docker stop nginx || true
+        docker rm nginx || true
 
     - name: Docker build
       run: docker build -t "nginx" .
