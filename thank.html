@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuizMaster — Миссия Завершена [200 OK]</title>
+
+    <!-- Tailwind + FontAwesome + Confetti -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Orbitron:wght@600;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        space: { 900: '#030712', 800: '#0B0F19', 700: '#111827', 600: '#1f2937' },
+                        neon: {
+                            cyan: '#00f3ff',
+                            purple: '#b026ff',
+                            pink: '#ff007f',
+                            blue: '#3b82f6',
+                            green: '#22ff88',
+                            amber: '#fbbf24'
+                        }
+                    },
+                    fontFamily: {
+                        orbitron: ['Orbitron', 'sans-serif'],
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        html, body {
+            font-family: 'Inter', sans-serif;
+            background-color: #030712;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+
+        #bg-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.55);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.10);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        }
+
+        .glass-panel-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-panel-hover:hover {
+            background: rgba(31, 41, 55, 0.7);
+            border-color: rgba(0, 243, 255, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px 0 rgba(0, 243, 255, 0.15);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #00f3ff 0%, #b026ff 50%, #ff007f 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .glitch-title {
+            position: relative;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            color: #ffffff;
+        }
+
+        .glitch-200 {
+            text-shadow: 0 0 20px rgba(34, 255, 136, 0.8), 0 0 40px rgba(0, 243, 255, 0.6);
+        }
+        .glitch-200::before,
+        .glitch-200::after {
+            content: "THANK YOU";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            clip: rect(0, 0, 0, 0);
+        }
+        .glitch-200::before {
+            left: -2px;
+            text-shadow: 2px 0 #22ff88;
+            animation: glitch-anim-1 2.8s infinite linear alternate-reverse;
+        }
+        .glitch-200::after {
+            left: 2px;
+            text-shadow: -2px 0 #00f3ff;
+            animation: glitch-anim-2 3.4s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim-1 {
+            0%   { clip: rect(20px, 9999px, 15px, 0); }
+            20%  { clip: rect(50px, 9999px, 85px, 0); }
+            40%  { clip: rect(10px, 9999px, 40px, 0); }
+            60%  { clip: rect(75px, 9999px, 10px, 0); }
+            80%  { clip: rect(30px, 9999px, 60px, 0); }
+            100% { clip: rect(90px, 9999px, 25px, 0); }
+        }
+        @keyframes glitch-anim-2 {
+            0%   { clip: rect(10px, 9999px, 60px, 0); }
+            25%  { clip: rect(80px, 9999px, 10px, 0); }
+            50%  { clip: rect(30px, 9999px, 70px, 0); }
+            75%  { clip: rect(65px, 9999px, 20px, 0); }
+            100% { clip: rect(40px, 9999px, 90px, 0); }
+        }
+
+        @keyframes floatSpace {
+            0%, 100% { transform: translateY(0) rotate(0) scale(1); }
+            50%      { transform: translateY(-18px) rotate(3deg) scale(1.02); }
+        }
+        .floating-astronaut { animation: floatSpace 6s ease-in-out infinite; }
+
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50%      { opacity: 0.8; transform: scale(1.08); }
+        }
+        .pulse-glow { animation: pulseGlow 4s infinite ease-in-out; }
+    </style>
+</head>
+
+<body class="min-h-screen flex flex-col justify-between relative overflow-x-hidden antialiased selection:bg-neon-cyan selection:text-black">
+
+    <!-- BACKGROUND CANVAS -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- AMBIENT GLOW ORBS -->
+    <div class="fixed top-0 left-1/4 w-96 h-96 bg-neon-cyan/10 rounded-full blur-3xl pointer-events-none pulse-glow z-0"></div>
+    <div class="fixed bottom-10 right-1/4 w-96 h-96 bg-neon-purple/10 rounded-full blur-3xl pointer-events-none pulse-glow z-0"></div>
+
+    <!-- HEADER -->
+    <header class="relative z-30 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex items-center justify-between">
+        <a href="200_index.html" class="flex items-center gap-3 group">
+            <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-neon-cyan to-neon-purple p-[1px] flex items-center justify-center shadow-lg shadow-neon-cyan/20 group-hover:scale-105 transition-transform">
+                <div class="w-full h-full bg-space-900 rounded-[11px] flex items-center justify-center">
+                    <i class="fa-solid fa-brain text-neon-cyan"></i>
+                </div>
+            </div>
+            <div>
+                <span class="font-orbitron font-bold text-lg tracking-wider text-white group-hover:text-neon-cyan transition-colors">QUIZ<span class="text-neon-cyan">MASTER</span></span>
+                <span class="text-[10px] block font-mono text-gray-500 tracking-widest">v2.0 // MISSION COMPLETE</span>
+            </div>
+        </a>
+
+        <div class="flex items-center gap-3">
+            <button onclick="launchConfetti()" class="glass-panel px-4 py-2 rounded-xl text-xs font-mono text-neon-amber border-neon-amber/30 hover:border-neon-amber transition-all flex items-center gap-2">
+                <i class="fa-solid fa-sparkles"></i> Салют
+            </button>
+            <a href="200_index.html" class="glass-panel px-4 py-2 rounded-xl text-xs font-mono text-gray-300 hover:text-white transition-all flex items-center gap-2">
+                <i class="fa-solid fa-house"></i> На главную
+            </a>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-grow w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10 flex items-center">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full">
+            
+            <!-- Left column: Text & Q&A Callout -->
+            <div class="lg:col-span-7 text-center lg:text-left space-y-6">
+                <!-- Status Badge -->
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass-panel text-xs sm:text-sm text-neon-green font-mono border-neon-green/30">
+                    <span class="w-2 h-2 rounded-full bg-neon-green animate-ping"></span>
+                    <span>ПРЕЗЕНТАЦИЯ ЗАВЕРШЕНА // STATUS: 200 SUCCESS</span>
+                </div>
+
+                <!-- Glitch Title -->
+                <div class="relative">
+                    <h1 class="glitch-title glitch-200 text-5xl sm:text-7xl md:text-8xl tracking-tight my-1">
+                        СПАСИБО!
+                    </h1>
+                </div>
+
+                <!-- Subtitle -->
+                <div class="space-y-3">
+                    <h2 class="text-2xl sm:text-3xl font-bold font-orbitron text-white tracking-wide">
+                        Спасибо за внимание
+                    </h2>
+                    <p class="text-gray-400 text-sm sm:text-base max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
+                        Миссия успешно выполнена. Системы переведены в режим ожидания. Если у вас возникли вопросы, мы готовы ответить на них прямо сейчас.
+                    </p>
+                </div>
+
+                <!-- Interactive Q&A Card -->
+                <div class="glass-panel p-5 rounded-2xl border-neon-cyan/30 space-y-3 max-w-xl mx-auto lg:mx-0">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-neon-cyan/15 text-neon-cyan flex items-center justify-center text-lg">
+                            <i class="fa-solid fa-comments"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold font-orbitron text-white">Время для вопросов (Q&A)</h3>
+                            <p class="text-xs text-gray-400">Готовы обсудить архитектуру, CI/CD или DevSecOps решения</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap gap-3 justify-center lg:justify-start pt-2">
+                    <a href="200_index.html" class="relative group overflow-hidden rounded-2xl p-[1px] font-semibold focus:outline-none">
+                        <span class="absolute inset-0 bg-gradient-to-r from-neon-cyan via-neon-purple to-neon-pink rounded-2xl"></span>
+                        <span class="relative block px-6 py-3.5 bg-space-900 rounded-[15px] text-white flex items-center gap-2 group-hover:bg-opacity-70 transition-all text-sm">
+                            <i class="fa-solid fa-rotate-left text-neon-cyan"></i>
+                            <span>Вернуться к проекту</span>
+                        </span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right column: Astronaut Illustration -->
+            <div class="lg:col-span-5 flex justify-center items-center relative">
+                <div class="absolute w-72 h-72 sm:w-96 sm:h-96 rounded-full bg-gradient-to-tr from-neon-cyan/20 via-neon-purple/20 to-transparent blur-3xl pulse-glow pointer-events-none"></div>
+
+                <div class="relative floating-astronaut max-w-[280px] sm:max-w-[340px]">
+                    <svg viewBox="0 0 500 500" class="w-full h-auto drop-shadow-[0_20px_30px_rgba(0,243,255,0.25)]">
+                        <!-- Tether -->
+                        <path d="M 250 450 C 150 480, 50 400, 20 300" fill="none" stroke="rgba(0, 243, 255, 0.4)" stroke-width="3" stroke-dasharray="6,6">
+                            <animate attributeName="d" dur="8s" repeatCount="indefinite" values="
+                                M 250 450 C 150 480, 50 400, 20 300;
+                                M 250 450 C 180 500, 30 380, 20 300;
+                                M 250 450 C 150 480, 50 400, 20 300" />
+                        </path>
+                        <!-- Backpack -->
+                        <rect x="170" y="180" width="160" height="190" rx="25" fill="#1e293b" stroke="#22ff88" stroke-width="4" />
+                        <rect x="185" y="200" width="30" height="70" rx="8" fill="#0f172a" stroke="#00f3ff" stroke-width="2" />
+                        <circle cx="200" cy="290" r="8" fill="#00f3ff" />
+                        <circle cx="200" cy="315" r="8" fill="#22ff88" />
+                        <!-- Body -->
+                        <path d="M 200 220 L 300 220 L 320 360 L 180 360 Z" fill="#e2e8f0" />
+                        <!-- Chest -->
+                        <rect x="215" y="235" width="70" height="60" rx="10" fill="#0f172a" stroke="#22ff88" stroke-width="3" />
+                        <line x1="230" y1="255" x2="270" y2="255" stroke="#00f3ff" stroke-width="3" stroke-linecap="round" />
+                        <line x1="230" y1="270" x2="255" y2="270" stroke="#22ff88" stroke-width="3" stroke-linecap="round" />
+                        <!-- Left arm -->
+                        <path d="M 200 230 C 150 250, 130 200, 140 170" fill="none" stroke="#cbd5e1" stroke-width="32" stroke-linecap="round" />
+                        <circle cx="140" cy="170" r="18" fill="#0f172a" stroke="#22ff88" stroke-width="3" />
+                        <!-- Right arm waving -->
+                        <path d="M 300 230 C 350 220, 370 170, 355 140" fill="none" stroke="#cbd5e1" stroke-width="32" stroke-linecap="round">
+                            <animate attributeName="d" dur="4s" repeatCount="indefinite" values="
+                                M 300 230 C 350 220, 370 170, 355 140;
+                                M 300 230 C 350 210, 365 150, 360 125;
+                                M 300 230 C 350 220, 370 170, 355 140" />
+                        </path>
+                        <circle cx="355" cy="140" r="18" fill="#0f172a" stroke="#22ff88" stroke-width="3" />
+                        <!-- Legs -->
+                        <path d="M 215 350 L 195 430" fill="none" stroke="#cbd5e1" stroke-width="36" stroke-linecap="round" />
+                        <path d="M 285 350 L 310 425" fill="none" stroke="#cbd5e1" stroke-width="36" stroke-linecap="round" />
+                        <rect x="165" y="420" width="45" height="25" rx="10" fill="#0f172a" stroke="#00f3ff" stroke-width="2" />
+                        <rect x="295" y="415" width="45" height="25" rx="10" fill="#0f172a" stroke="#22ff88" stroke-width="2" />
+                        <!-- Helmet -->
+                        <circle cx="250" cy="165" r="75" fill="#f8fafc" stroke="#22ff88" stroke-width="4" />
+                        <ellipse cx="255" cy="165" rx="58" ry="48" fill="#030712" />
+                        <path d="M 210 145 C 240 125, 280 125, 295 145 C 270 155, 230 155, 210 145 Z" fill="url(#visor-grad-thanks)" opacity="0.85" />
+                        <circle cx="230" cy="170" r="2" fill="#ffffff" />
+                        <circle cx="275" cy="180" r="1.5" fill="#00f3ff" />
+                        <circle cx="250" cy="185" r="2" fill="#22ff88" />
+                        <defs>
+                            <linearGradient id="visor-grad-thanks" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#00f3ff" />
+                                <stop offset="50%" stop-color="#22ff88" />
+                                <stop offset="100%" stop-color="#b026ff" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+
+                    <!-- Floating badge -->
+                    <div class="absolute -bottom-4 right-0 glass-panel px-3 py-1.5 rounded-xl text-[11px] font-mono text-neon-green flex items-center gap-1.5 shadow-lg border-neon-green/40">
+                        <span class="animate-ping w-1.5 h-1.5 rounded-full bg-neon-green"></span>
+                        <span>MISSION SUCCESS</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row items-center justify-between border-t border-white/5 text-xs text-gray-500 gap-4">
+        <div class="font-mono">
+            © 2026 Cosmic QuizMaster Systems // <span class="text-neon-green">ALL SYSTEMS: OK</span>
+        </div>
+        <div class="flex items-center gap-5 font-mono">
+            <span class="hover:text-neon-cyan cursor-pointer transition-colors">DevSecOps Ready</span>
+            <span class="hover:text-neon-cyan cursor-pointer transition-colors">Nginx 200 OK</span>
+        </div>
+    </footer>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+    // STARFIELD CANVAS
+    const bgCanvas = document.getElementById('bg-canvas');
+    const bgCtx = bgCanvas.getContext('2d');
+    let stars = [];
+    let nebulae = [];
+    let mouseX = window.innerWidth / 2;
+    let mouseY = window.innerHeight / 2;
+
+    function resizeBgCanvas() {
+        bgCanvas.width = window.innerWidth;
+        bgCanvas.height = window.innerHeight;
+        initStars();
+        initNebulae();
+    }
+
+    function initStars() {
+        stars = [];
+        for (let i = 0; i < 160; i++) {
+            stars.push({
+                x: Math.random() * bgCanvas.width,
+                y: Math.random() * bgCanvas.height,
+                size: Math.random() * 2 + 0.5,
+                alpha: Math.random(),
+                speed: Math.random() * 0.02 + 0.005,
+                color: Math.random() > 0.8 ? '#00f3ff' : (Math.random() > 0.6 ? '#b026ff' : '#ffffff')
+            });
+        }
+    }
+
+    function initNebulae() {
+        nebulae = [
+            { x: bgCanvas.width * 0.2, y: bgCanvas.height * 0.3, radius: 300, color: 'rgba(176, 38, 255, 0.08)' },
+            { x: bgCanvas.width * 0.8, y: bgCanvas.height * 0.7, radius: 350, color: 'rgba(0, 243, 255, 0.07)' },
+            { x: bgCanvas.width * 0.5, y: bgCanvas.height * 0.5, radius: 250, color: 'rgba(34, 255, 136, 0.05)' }
+        ];
+    }
+
+    function renderBgCanvas() {
+        bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+        nebulae.forEach(n => {
+            const grad = bgCtx.createRadialGradient(n.x, n.y, 10, n.x, n.y, n.radius);
+            grad.addColorStop(0, n.color);
+            grad.addColorStop(1, 'transparent');
+            bgCtx.fillStyle = grad;
+            bgCtx.beginPath();
+            bgCtx.arc(n.x, n.y, n.radius, 0, Math.PI * 2);
+            bgCtx.fill();
+        });
+
+        const offsetX = (mouseX - bgCanvas.width / 2) * 0.03;
+        const offsetY = (mouseY - bgCanvas.height / 2) * 0.03;
+
+        stars.forEach(star => {
+            star.alpha += star.speed;
+            if (star.alpha > 1 || star.alpha < 0) star.speed = -star.speed;
+
+            bgCtx.save();
+            bgCtx.globalAlpha = Math.abs(star.alpha);
+            bgCtx.fillStyle = star.color;
+            bgCtx.beginPath();
+            bgCtx.arc(star.x + offsetX * star.size, star.y + offsetY * star.size, star.size, 0, Math.PI * 2);
+            bgCtx.fill();
+            bgCtx.restore();
+        });
+
+        requestAnimationFrame(renderBgCanvas);
+    }
+
+    window.addEventListener('resize', resizeBgCanvas);
+    window.addEventListener('mousemove', (e) => {
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+    });
+
+    function launchConfetti() {
+        if (typeof confetti === 'function') {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }
+    }
+
+    window.onload = function() {
+        resizeBgCanvas();
+        renderBgCanvas();
+        setTimeout(launchConfetti, 500);
+    };
+    </script>
+</body>
+</html>
