@@ -6,7 +6,7 @@ RUN apt update && apt install nginx -y
 
 WORKDIR /var/www/html
 
-RUN rm index.nginx-debian.html
+RUN rm -f index.nginx-debian.html
 
 COPY *.html . 
 
@@ -14,10 +14,12 @@ WORKDIR /etc/nginx/sites-available
 
 COPY config/default .
 
-WORKDIR /etc/nginx/
+WORKDIR /etc/nginx
 
-RUN rm nginx.conf
+RUN rm -f nginx.conf
 
 COPY config/nginx.conf .
+
+EXPOSE 5000
 
 CMD ["nginx", "-g", "daemon off;"]
