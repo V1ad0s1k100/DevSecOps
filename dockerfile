@@ -14,10 +14,10 @@ WORKDIR /etc/nginx/sites-available
 
 COPY config/default .
 
-# WORKDIR /etc/nginx/
+WORKDIR /etc/nginx/
 
-# RUN rm nginx.conf
+RUN rm nginx.conf
 
-# COPY config/nginx.conf .
+COPY config/nginx.conf .
 
 CMD ["nginx", "-g", "daemon off;"]
