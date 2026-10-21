@@ -17,9 +17,9 @@ jobs:
       run: |
         DATE=$(date +%Y-%m-%d_%H-%M-%S)
 
-        mkdir -p ~/backup/$DATE
+        mkdir -p ~/backups/$DATE
         
-        cp ./sites/* ~/website/backup/$DATE || true
+        cp ./sites/* ~/backups/$DATE || true
 
     - name: Stop old container (if exists)
       run: |
