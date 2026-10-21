@@ -6,14 +6,28 @@ on:
 
 jobs:
   deploy:
-    runs-on: self-hosted
+    runs-on: ["self-hosted", "ubuntu-server"]
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
 
-    - name: Docker build
-      run: docker build -t "nginx" .
-    
-    - name: Docker run
-      run: docker run -d -p 5000:5000 nginx
+
+    - name: Backup
+      run: |
+        DATE=$(date +%Y-%m-%d_%H-%M-%S)
+
+        mkdir -p ~/backups/$DATE
+        
+        cp ./sites/* ~/backups/$DATE || true
+
+    - name: Stop old container (if exists)
+      run: |
+        docker stop nginx-container || true
+        docker rm nginx-container || true
+
+    - name: Build dockerfile
+      run: docker build -t nginx-image .
+
+    - name: Nginx run
+      run: docker run -d --name nginx-container -p 5000:5000 nginx-image

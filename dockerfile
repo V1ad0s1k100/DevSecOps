@@ -1,25 +1,7 @@
-FROM ubuntu:26.04
+FROM nginx:latest
 
-LABEL name="ubuntu test container"
+COPY ./sites/ /var/www/html/
 
-RUN apt update && apt install nginx -y
+COPY ./config/nginx.conf /etc/nginx/nginx.conf
 
-WORKDIR /var/www/html
-
-RUN rm -f index.nginx-debian.html
-
-COPY *.html . 
-
-WORKDIR /etc/nginx/sites-available
-
-COPY config/default .
-
-WORKDIR /etc/nginx
-
-RUN rm -f nginx.conf
-
-COPY config/nginx.conf .
-
-EXPOSE 5000
-
-CMD ["nginx", "-g", "daemon off;"]
+COPY ./config/default.conf /etc/nginx/conf.d/default.conf
