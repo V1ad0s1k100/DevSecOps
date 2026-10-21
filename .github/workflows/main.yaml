@@ -10,7 +10,7 @@ jobs:
     
     steps:
     - name: Checkout code
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
 
 
     - name: Backup
@@ -19,16 +19,15 @@ jobs:
 
         mkdir -p ~/website/backup/$DATE ~/website/sites
         
-        cp ~/website/sites/* ~/website/backup/$DATE || true
+        cp ./sites/* ~/website/backup/$DATE || true
 
-        rm -rf ~/website/sites/* 
-
-        cp -r ./* ~/website/sites/
-        
     - name: Stop old container (if exists)
       run: |
         docker stop nginx-container || true
         docker rm nginx-container || true
 
+    - name: Build dockerfile
+      run: docker build -t nginx-image .
+
     - name: Nginx run
-      run: docker run -d --name nginx-container -p 5000:5000 -v $HOME/website/sites:/var/www/html:ro \ nginx:latest
+      run: docker run -d --name nginx-container -p 5000:5000 nginx-image
